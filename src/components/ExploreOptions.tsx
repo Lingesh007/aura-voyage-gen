@@ -1,5 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Plane, Hotel, FileText, MapPin } from "lucide-react";
+import cityImage from "@/assets/destination-city.jpg";
+import mountainImage from "@/assets/destination-mountain.jpg";
+import culturalImage from "@/assets/destination-cultural.jpg";
+import beachImage from "@/assets/destination-beach.jpg";
 
 const ExploreOptions = () => {
   const navigate = useNavigate();
@@ -9,32 +13,28 @@ const ExploreOptions = () => {
       icon: Plane,
       title: "Flights",
       description: "Search and book international and domestic flights",
-      color: "from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:border-blue-500/40",
-      iconColor: "text-blue-400",
+      image: cityImage,
       path: "/booking/flights",
     },
     {
       icon: Hotel,
       title: "Hotels",
       description: "Find luxury accommodations worldwide",
-      color: "from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:border-purple-500/40",
-      iconColor: "text-purple-400",
+      image: mountainImage,
       path: "/booking/hotels",
     },
     {
       icon: FileText,
       title: "Visas",
       description: "Visa assistance and documentation services",
-      color: "from-green-500/10 to-green-500/5 border-green-500/20 hover:border-green-500/40",
-      iconColor: "text-green-400",
+      image: culturalImage,
       path: "/booking/visas",
     },
     {
       icon: MapPin,
       title: "Activities",
       description: "Discover experiences and local activities",
-      color: "from-orange-500/10 to-orange-500/5 border-orange-500/20 hover:border-orange-500/40",
-      iconColor: "text-orange-400",
+      image: beachImage,
       path: "/booking/activities",
     },
   ];
@@ -49,16 +49,26 @@ const ExploreOptions = () => {
           <button
             key={index}
             onClick={() => navigate(option.path)}
-            className={`group relative p-6 rounded-2xl bg-gradient-to-br ${option.color} border transition-all duration-300 hover:scale-105 text-left`}
+            className="group relative h-80 rounded-2xl overflow-hidden border-2 border-border hover:border-primary/40 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-            <div className="relative">
-              <option.icon className={`w-10 h-10 ${option.iconColor} mb-4`} strokeWidth={1.5} />
-              <h3 className="font-luxury text-xl font-bold text-foreground mb-2">
+            {/* Background Image */}
+            <img 
+              src={option.image} 
+              alt={`${option.title} destination`}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent" />
+            
+            {/* Content */}
+            <div className="absolute inset-0 p-6 flex flex-col justify-end">
+              <option.icon className="w-10 h-10 text-primary mb-3 drop-shadow-lg" strokeWidth={1.5} />
+              <h3 className="font-luxury text-2xl font-bold text-foreground mb-2 drop-shadow-md">
                 {option.title}
               </h3>
-              <p className="text-sm text-muted-foreground">{option.description}</p>
+              <p className="text-sm text-foreground/80 drop-shadow-sm">{option.description}</p>
             </div>
           </button>
         ))}

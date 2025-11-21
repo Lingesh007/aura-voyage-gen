@@ -47,12 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        luxury: {
-          gold: "hsl(var(--luxury-gold))",
-          "gold-dark": "hsl(var(--luxury-gold-dark))",
-          charcoal: "hsl(var(--luxury-charcoal))",
-          navy: "hsl(var(--luxury-navy))",
-          slate: "hsl(var(--luxury-slate))",
+        pastel: {
+          coral: "hsl(var(--pastel-coral))",
+          lavender: "hsl(var(--pastel-lavender))",
+          mint: "hsl(var(--pastel-mint))",
+          sky: "hsl(var(--pastel-sky))",
+          peach: "hsl(var(--pastel-peach))",
+          rose: "hsl(var(--pastel-rose))",
         },
       },
       fontFamily: {
