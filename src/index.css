@@ -8,89 +8,91 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Luxury Travel Theme - Light Mode (fallback) */
-    --background: 220 20% 97%;
-    --foreground: 220 15% 15%;
+    /* Pastel Travel Theme - Light Mode */
+    --background: 30 40% 96%;
+    --foreground: 240 10% 20%;
     
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card-foreground: 240 10% 20%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 240 10% 20%;
     
-    --primary: 45 90% 55%;
-    --primary-foreground: 220 20% 10%;
+    --primary: 340 75% 80%;
+    --primary-foreground: 340 50% 25%;
     
-    --secondary: 220 15% 25%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 270 50% 85%;
+    --secondary-foreground: 270 30% 30%;
     
-    --muted: 220 15% 92%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 210 30% 93%;
+    --muted-foreground: 240 8% 50%;
     
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 160 50% 75%;
+    --accent-foreground: 160 40% 25%;
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 65% 70%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 15% 85%;
-    --input: 220 15% 85%;
-    --ring: 45 90% 55%;
+    --border: 210 25% 88%;
+    --input: 210 25% 88%;
+    --ring: 340 75% 80%;
     
-    --radius: 0.75rem;
+    --radius: 1rem;
     
-    /* Luxury specific colors */
-    --luxury-gold: 45 90% 55%;
-    --luxury-gold-dark: 45 80% 45%;
-    --luxury-charcoal: 220 20% 12%;
-    --luxury-navy: 220 30% 18%;
-    --luxury-slate: 220 15% 25%;
+    /* Pastel destination colors */
+    --pastel-coral: 10 75% 80%;
+    --pastel-lavender: 270 50% 85%;
+    --pastel-mint: 160 50% 75%;
+    --pastel-sky: 200 60% 80%;
+    --pastel-peach: 25 80% 82%;
+    --pastel-rose: 340 75% 85%;
     
     /* Gradients */
-    --gradient-luxury: linear-gradient(135deg, hsl(220 20% 12%) 0%, hsl(220 30% 18%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(45 90% 55%) 0%, hsl(45 80% 45%) 100%);
+    --gradient-pastel: linear-gradient(135deg, hsl(340 75% 85%) 0%, hsl(270 50% 88%) 100%);
+    --gradient-soft: linear-gradient(135deg, hsl(200 60% 85%) 0%, hsl(160 50% 80%) 100%);
     
     /* Effects */
-    --shadow-luxury: 0 10px 40px -10px hsl(220 20% 12% / 0.4);
-    --shadow-gold: 0 5px 20px -5px hsl(45 90% 55% / 0.3);
+    --shadow-soft: 0 10px 40px -10px hsl(240 20% 70% / 0.25);
+    --shadow-pastel: 0 5px 20px -5px hsl(340 75% 80% / 0.3);
   }
 
   .dark {
-    /* Luxury Travel Theme - Dark Mode (primary) */
-    --background: 220 20% 12%;
-    --foreground: 0 0% 98%;
+    /* Pastel Travel Theme - Dark Mode */
+    --background: 240 15% 15%;
+    --foreground: 30 30% 95%;
     
-    --card: 220 20% 15%;
-    --card-foreground: 0 0% 98%;
+    --card: 240 12% 20%;
+    --card-foreground: 30 30% 95%;
     
-    --popover: 220 20% 15%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 240 12% 20%;
+    --popover-foreground: 30 30% 95%;
     
-    --primary: 45 90% 55%;
-    --primary-foreground: 220 20% 10%;
+    --primary: 340 70% 75%;
+    --primary-foreground: 240 15% 15%;
     
-    --secondary: 220 15% 25%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 270 45% 75%;
+    --secondary-foreground: 240 15% 15%;
     
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 240 10% 25%;
+    --muted-foreground: 240 5% 70%;
     
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 160 45% 70%;
+    --accent-foreground: 240 15% 15%;
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 60% 65%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
-    --ring: 45 90% 55%;
+    --border: 240 10% 30%;
+    --input: 240 10% 30%;
+    --ring: 340 70% 75%;
     
-    /* Luxury specific colors */
-    --luxury-gold: 45 90% 55%;
-    --luxury-gold-dark: 45 80% 45%;
-    --luxury-charcoal: 220 20% 12%;
-    --luxury-navy: 220 30% 18%;
-    --luxury-slate: 220 15% 25%;
+    /* Pastel destination colors */
+    --pastel-coral: 10 70% 75%;
+    --pastel-lavender: 270 45% 80%;
+    --pastel-mint: 160 45% 70%;
+    --pastel-sky: 200 55% 75%;
+    --pastel-peach: 25 75% 78%;
+    --pastel-rose: 340 70% 80%;
   }
 }
 
@@ -117,8 +119,8 @@ All colors MUST be HSL.
     font-family: 'Cormorant Garamond', serif;
   }
   
-  .text-gradient-gold {
-    @apply bg-gradient-to-r from-[hsl(var(--luxury-gold))] to-[hsl(var(--luxury-gold-dark))] bg-clip-text text-transparent;
+  .text-gradient-pastel {
+    @apply bg-gradient-to-r from-[hsl(var(--pastel-coral))] via-[hsl(var(--pastel-lavender))] to-[hsl(var(--pastel-mint))] bg-clip-text text-transparent;
   }
   
   .animate-fade-in {
