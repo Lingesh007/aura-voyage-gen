@@ -2,15 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plane, LogOut, Sparkles } from "lucide-react";
-import TravaxAgent from "@/components/TravaxAgent";
+import { Plane, LogOut, User, Wallet } from "lucide-react";
 import ExploreOptions from "@/components/ExploreOptions";
 import heroImage from "@/assets/destination-beach.jpg";
 
-const Dashboard = () => {
+interface DashboardProps {
+  onOpenAgent: () => void;
+}
+
+const Dashboard = ({ onOpenAgent }: DashboardProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [showAgent, setShowAgent] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -64,10 +66,23 @@ const Dashboard = () => {
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-muted-foreground text-sm">
-              {user.email}
-            </span>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/profile")}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/budget-tracker")}
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              Budget
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -103,54 +118,13 @@ const Dashboard = () => {
       {/* Main content */}
       <main className="relative z-10 container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Action cards */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12 animate-slide-up">
-            {/* Travax AI Agent */}
-            <button
-              onClick={() => setShowAgent(true)}
-              className="group relative p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] text-left shadow-lg hover:shadow-xl"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-              <div className="relative">
-                <Sparkles className="w-12 h-12 text-primary mb-4" strokeWidth={1.5} />
-                <h3 className="font-luxury text-3xl font-bold text-foreground mb-2">
-                  Travax AI Agent
-                </h3>
-                <p className="text-muted-foreground">
-                  Let our AI assistant plan your perfect trip, optimize budgets, and handle all bookings
-                </p>
-              </div>
-            </button>
-
-            {/* Manual Explore */}
-            <button
-              onClick={() => {
-                document.getElementById('explore-section')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="group relative p-8 rounded-2xl bg-gradient-to-br from-secondary/10 to-secondary/5 border-2 border-secondary/20 hover:border-secondary/40 transition-all duration-300 hover:scale-[1.02] text-left shadow-lg hover:shadow-xl"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-              <div className="relative">
-                <Plane className="w-12 h-12 text-secondary mb-4" strokeWidth={1.5} />
-                <h3 className="font-luxury text-3xl font-bold text-foreground mb-2">
-                  Explore Manually
-                </h3>
-                <p className="text-muted-foreground">
-                  Browse and book flights, hotels, visas, and activities at your own pace
-                </p>
-              </div>
-            </button>
-          </div>
-
           {/* Explore section */}
+
           <div id="explore-section" className="animate-scale-in">
-            <ExploreOptions />
+            <ExploreOptions onOpenAgent={onOpenAgent} />
           </div>
         </div>
       </main>
-
-      {/* Travax Agent Modal */}
-      {showAgent && <TravaxAgent onClose={() => setShowAgent(false)} />}
     </div>
   );
 };
