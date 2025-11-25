@@ -73,17 +73,17 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-4xl h-[80vh] bg-luxury-navy rounded-2xl border border-luxury-slate shadow-2xl flex flex-col animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-4xl h-[80vh] bg-gradient-to-br from-card via-card to-primary/5 rounded-2xl border-2 border-primary/30 shadow-2xl flex flex-col animate-scale-in overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-luxury-slate/50">
+        <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 to-secondary/5">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 blur-lg bg-luxury-gold opacity-30 animate-pulse" />
-              <Sparkles className="w-6 h-6 text-luxury-gold relative" strokeWidth={1.5} />
+              <div className="absolute inset-0 blur-xl bg-primary opacity-40 animate-pulse" />
+              <Sparkles className="w-6 h-6 text-primary relative" strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="font-luxury text-2xl font-bold text-gradient-gold">
+              <h2 className="font-luxury text-2xl font-bold text-gradient-pastel">
                 Travax AI Agent
               </h2>
               <p className="text-sm text-muted-foreground">Your intelligent travel assistant</p>
@@ -93,7 +93,7 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="hover:bg-luxury-slate/20"
+            className="hover:bg-primary/10"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -111,8 +111,8 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
                 <div
                   className={`max-w-[80%] p-4 rounded-2xl ${
                     message.role === "user"
-                      ? "bg-luxury-gold text-luxury-charcoal"
-                      : "bg-luxury-slate/30 text-foreground border border-luxury-slate/50"
+                      ? "bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-lg"
+                      : "bg-card/80 backdrop-blur-sm text-foreground border border-border/50 shadow-md"
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{message.content}</p>
@@ -121,8 +121,8 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
             ))}
             {loading && (
               <div className="flex justify-start animate-fade-in">
-                <div className="bg-luxury-slate/30 text-foreground border border-luxury-slate/50 p-4 rounded-2xl">
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="bg-card/80 backdrop-blur-sm text-foreground border border-border/50 p-4 rounded-2xl shadow-md">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 </div>
               </div>
             )}
@@ -130,26 +130,26 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-6 border-t border-luxury-slate/50">
+        <div className="p-6 border-t border-border/50 bg-gradient-to-r from-secondary/5 to-primary/5">
           <div className="flex gap-3">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask me anything about your travel plans..."
-              className="flex-1 bg-luxury-slate/20 border-luxury-slate/50 focus:border-luxury-gold"
+              className="flex-1 bg-card/80 backdrop-blur-sm border-border/50 focus:border-primary shadow-inner"
               disabled={loading}
             />
             <Button
               onClick={handleSend}
               disabled={loading || !input.trim()}
-              className="bg-luxury-gold hover:bg-luxury-gold-dark text-luxury-charcoal"
+              className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground shadow-lg"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            AI-powered by GPT-5 • Personalized to your preferences
+            AI-powered by Gemini • Personalized to your preferences
           </p>
         </div>
       </div>

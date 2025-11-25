@@ -52,14 +52,14 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Header */}
-      <header className="relative z-10 border-b border-border backdrop-blur-xl bg-card/80">
+      <header className="relative z-10 border-b border-border/50 backdrop-blur-xl bg-card/90 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 blur-xl bg-primary opacity-30" />
+              <div className="absolute inset-0 blur-xl bg-primary opacity-40 animate-pulse" />
               <Plane className="w-8 h-8 text-primary relative" strokeWidth={1.5} />
             </div>
-            <h1 className="font-luxury text-2xl font-bold text-gradient-pastel">
+            <h1 className="font-luxury text-3xl font-bold text-gradient-pastel">
               Travax
             </h1>
           </div>
