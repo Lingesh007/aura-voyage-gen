@@ -1,9 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plane, Hotel, FileText, MapPin } from "lucide-react";
+import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import hotelParis from "@/assets/hotel-paris.jpg";
+import hotelDubai from "@/assets/hotel-dubai.jpg";
+import hotelTokyo from "@/assets/hotel-tokyo.jpg";
+import flightAirplane from "@/assets/flight-airplane.jpg";
+import flightBusiness from "@/assets/flight-business.jpg";
+import flightLounge from "@/assets/flight-lounge.jpg";
 
 interface BookingProps {
   onOpenAgent: () => void;
@@ -14,6 +20,142 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+
+  const getOptions = () => {
+    switch (type) {
+      case "flights":
+        return [
+          {
+            image: flightAirplane,
+            destination: "London",
+            departure: "New York JFK",
+            arrival: "London Heathrow",
+            date: "Dec 15, 2024",
+            duration: "7h 30m",
+            price: 1250,
+            class: "Business Class"
+          },
+          {
+            image: flightBusiness,
+            destination: "Tokyo",
+            departure: "San Francisco",
+            arrival: "Tokyo Narita",
+            date: "Dec 20, 2024",
+            duration: "11h 45m",
+            price: 1850,
+            class: "Business Class"
+          },
+          {
+            image: flightLounge,
+            destination: "Dubai",
+            departure: "Los Angeles",
+            arrival: "Dubai International",
+            date: "Dec 18, 2024",
+            duration: "16h 20m",
+            price: 2100,
+            class: "First Class"
+          }
+        ];
+      case "hotels":
+        return [
+          {
+            image: hotelParis,
+            destination: "Paris",
+            name: "Le Meurice",
+            rating: 5,
+            location: "Near Eiffel Tower",
+            date: "3 nights",
+            price: 850,
+            amenities: "Spa, Pool, Restaurant"
+          },
+          {
+            image: hotelDubai,
+            destination: "Dubai",
+            name: "Burj Al Arab",
+            rating: 5,
+            location: "Marina District",
+            date: "4 nights",
+            price: 1200,
+            amenities: "Beach, Spa, Fine Dining"
+          },
+          {
+            image: hotelTokyo,
+            destination: "Tokyo",
+            name: "Aman Tokyo",
+            rating: 5,
+            location: "Shibuya District",
+            date: "5 nights",
+            price: 980,
+            amenities: "Zen Garden, Spa, Onsen"
+          }
+        ];
+      case "visas":
+        return [
+          {
+            image: flightAirplane,
+            destination: "United Kingdom",
+            name: "Business Visa",
+            processingTime: "5-7 days",
+            validity: "2 years",
+            price: 250,
+            type: "Multiple Entry"
+          },
+          {
+            image: flightBusiness,
+            destination: "Japan",
+            name: "Business Visa",
+            processingTime: "3-5 days",
+            validity: "90 days",
+            price: 180,
+            type: "Single Entry"
+          },
+          {
+            image: flightLounge,
+            destination: "UAE",
+            name: "Business Visa",
+            processingTime: "2-3 days",
+            validity: "30 days",
+            price: 150,
+            type: "Multiple Entry"
+          }
+        ];
+      case "activities":
+        return [
+          {
+            image: hotelParis,
+            destination: "Paris",
+            name: "City Tour & Seine Cruise",
+            duration: "Full Day",
+            participants: "Up to 15",
+            price: 350,
+            includes: "Guide, Transport, Lunch"
+          },
+          {
+            image: hotelDubai,
+            destination: "Dubai",
+            name: "Desert Safari Experience",
+            duration: "6 hours",
+            participants: "Up to 20",
+            price: 280,
+            includes: "BBQ Dinner, Shows"
+          },
+          {
+            image: hotelTokyo,
+            destination: "Tokyo",
+            name: "Cultural Heritage Tour",
+            duration: "8 hours",
+            participants: "Up to 12",
+            price: 320,
+            includes: "Tea Ceremony, Temples"
+          }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const options = getOptions();
 
   const getIcon = () => {
     switch (type) {
@@ -35,8 +177,16 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   };
 
   const handleBooking = () => {
+    if (selectedOption === null) {
+      toast({
+        title: "Selection Required",
+        description: "Please select an option to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
-    // Simulate booking process
     setTimeout(() => {
       setLoading(false);
       toast({
@@ -46,6 +196,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
       navigate("/confirmation", { 
         state: { 
           type: type,
+          option: options[selectedOption],
           bookingId: `TVX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
         } 
       });
@@ -77,7 +228,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           </Button>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Card className="p-8 bg-card/80 backdrop-blur-xl border-2 border-border shadow-lg animate-scale-in">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center mb-4">
@@ -91,31 +242,98 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
               </p>
             </div>
 
-            {/* Placeholder for booking interface */}
+            {/* Booking Options */}
             <div className="space-y-6 mb-8">
-              <div className="p-6 rounded-lg bg-muted/50 border border-border">
-                <h3 className="font-semibold text-foreground mb-2">Search & Filter</h3>
-                <p className="text-sm text-muted-foreground">
-                  Advanced search functionality coming soon. For now, use the AI agent for personalized recommendations.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div
+              <div className="grid md:grid-cols-3 gap-6">
+                {options.map((option: any, i) => (
+                  <button
                     key={i}
-                    className="p-4 rounded-lg bg-card border border-border hover:border-primary/40 transition-colors cursor-pointer"
+                    onClick={() => setSelectedOption(i)}
+                    className={`group relative rounded-2xl overflow-hidden border-2 transition-all duration-300 hover:scale-[1.02] text-left ${
+                      selectedOption === i
+                        ? "border-primary shadow-xl ring-2 ring-primary/50"
+                        : "border-border hover:border-primary/40"
+                    }`}
                   >
-                    <div className="aspect-video bg-muted/30 rounded-lg mb-3" />
-                    <h4 className="font-semibold text-foreground mb-1">Option {i}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">Premium selection</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-primary font-bold">From $999</span>
-                      <Button size="sm" variant="outline" className="border-border">
-                        Select
-                      </Button>
+                    <div className="aspect-video overflow-hidden">
+                      <img 
+                        src={option.image} 
+                        alt={option.destination}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
                     </div>
-                  </div>
+                    <div className="p-5 bg-card">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-luxury text-xl font-bold text-foreground mb-1">
+                            {option.destination}
+                          </h4>
+                          {type === "hotels" && option.name && (
+                            <p className="text-sm text-muted-foreground">{option.name}</p>
+                          )}
+                          {type === "flights" && option.departure && (
+                            <p className="text-xs text-muted-foreground">{option.departure} → {option.arrival}</p>
+                          )}
+                          {type === "visas" && option.name && (
+                            <p className="text-sm text-muted-foreground">{option.name}</p>
+                          )}
+                          {type === "activities" && option.name && (
+                            <p className="text-sm text-muted-foreground">{option.name}</p>
+                          )}
+                        </div>
+                        {type === "hotels" && option.rating && (
+                          <div className="flex items-center gap-1 text-accent">
+                            {[...Array(option.rating)].map((_, i) => (
+                              <Star key={i} className="w-3 h-3 fill-current" />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 text-xs text-muted-foreground mb-4">
+                        {type === "flights" && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              {option.duration} • {option.class}
+                            </div>
+                            <div>{option.date}</div>
+                          </>
+                        )}
+                        {type === "hotels" && (
+                          <>
+                            <div>{option.location} • {option.date}</div>
+                            <div>{option.amenities}</div>
+                          </>
+                        )}
+                        {type === "visas" && (
+                          <>
+                            <div>{option.type} • {option.validity}</div>
+                            <div>Processing: {option.processingTime}</div>
+                          </>
+                        )}
+                        {type === "activities" && (
+                          <>
+                            <div>{option.duration} • Up to {option.participants} people</div>
+                            <div>Includes: {option.includes}</div>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-3 border-t border-border">
+                        <span className="text-2xl font-bold text-primary">
+                          ${option.price}
+                        </span>
+                        <div className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                          selectedOption === i
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          {selectedOption === i ? "Selected" : "Select"}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
