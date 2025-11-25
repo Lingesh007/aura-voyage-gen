@@ -123,6 +123,10 @@ All colors MUST be HSL.
     @apply bg-gradient-to-r from-[hsl(var(--pastel-coral))] via-[hsl(var(--pastel-lavender))] to-[hsl(var(--pastel-mint))] bg-clip-text text-transparent;
   }
   
+  .bg-gradient-pastel {
+    background: linear-gradient(135deg, hsl(var(--pastel-coral)) 0%, hsl(var(--pastel-lavender)) 50%, hsl(var(--pastel-mint)) 100%);
+  }
+  
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out forwards;
   }
