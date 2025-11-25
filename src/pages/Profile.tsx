@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plane, Calendar, MapPin, User } from "lucide-react";
+import { ArrowLeft, Plane, Calendar, MapPin, User, TrendingUp, Globe, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Booking {
@@ -18,7 +18,15 @@ interface Booking {
 const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [bookings] = useState<Booking[]>([
+  
+  const stats = {
+    tripsThisYear: 12,
+    kilometresTraveled: 48750,
+    countriesVisited: 8,
+    totalSpent: 32500
+  };
+
+  const [upcomingTrips] = useState<Booking[]>([
     {
       id: "TVX-ABC123",
       type: "Flight",
@@ -32,9 +40,12 @@ const Profile = () => {
       type: "Hotel",
       destination: "Singapore",
       date: "2024-12-20",
-      status: "pending",
+      status: "confirmed",
       price: "$850"
-    },
+    }
+  ]);
+
+  const [recentTrips] = useState<Booking[]>([
     {
       id: "TVX-GHI789",
       type: "Flight",
@@ -42,6 +53,22 @@ const Profile = () => {
       date: "2024-11-10",
       status: "completed",
       price: "$980"
+    },
+    {
+      id: "TVX-JKL012",
+      type: "Hotel",
+      destination: "Paris, France",
+      date: "2024-11-05",
+      status: "completed",
+      price: "$1,120"
+    },
+    {
+      id: "TVX-MNO345",
+      type: "Flight",
+      destination: "Dubai, UAE",
+      date: "2024-10-20",
+      status: "completed",
+      price: "$1,450"
     }
   ]);
 
@@ -56,19 +83,6 @@ const Profile = () => {
     };
     checkUser();
   }, [navigate]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-accent/20 text-accent-foreground border-accent";
-      case "pending":
-        return "bg-secondary/20 text-secondary-foreground border-secondary";
-      case "completed":
-        return "bg-muted text-muted-foreground border-border";
-      default:
-        return "bg-muted text-muted-foreground border-border";
-    }
-  };
 
   if (!user) return null;
 
@@ -97,28 +111,102 @@ const Profile = () => {
               </div>
               <div>
                 <h1 className="font-luxury text-3xl font-bold text-foreground mb-2">
-                  My Profile
+                  My Travel Profile
                 </h1>
                 <p className="text-muted-foreground">{user.email}</p>
               </div>
             </div>
           </Card>
 
-          {/* Bookings Section */}
+          {/* Milestones Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <Card className="p-6 text-center bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20">
+              <Award className="w-8 h-8 text-primary mx-auto mb-3" />
+              <p className="text-3xl font-bold text-foreground mb-1">{stats.tripsThisYear}</p>
+              <p className="text-sm text-muted-foreground">Trips This Year</p>
+            </Card>
+            
+            <Card className="p-6 text-center bg-gradient-to-br from-secondary/10 to-secondary/5 border-2 border-secondary/20">
+              <Globe className="w-8 h-8 text-secondary mx-auto mb-3" />
+              <p className="text-3xl font-bold text-foreground mb-1">{stats.kilometresTraveled.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Kilometers Traveled</p>
+            </Card>
+            
+            <Card className="p-6 text-center bg-gradient-to-br from-accent/10 to-accent/5 border-2 border-accent/20">
+              <MapPin className="w-8 h-8 text-accent mx-auto mb-3" />
+              <p className="text-3xl font-bold text-foreground mb-1">{stats.countriesVisited}</p>
+              <p className="text-sm text-muted-foreground">Countries Visited</p>
+            </Card>
+            
+            <Card className="p-6 text-center bg-gradient-to-br from-pastel-coral/10 to-pastel-coral/5 border-2 border-pastel-coral/20">
+              <TrendingUp className="w-8 h-8 text-pastel-coral mx-auto mb-3" />
+              <p className="text-3xl font-bold text-foreground mb-1">${stats.totalSpent.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Spent</p>
+            </Card>
+          </div>
+
+          {/* Upcoming Trips */}
           <div className="mb-8">
             <h2 className="font-luxury text-2xl font-bold text-foreground mb-6">
-              My Bookings
+              Upcoming Trips
             </h2>
             <div className="space-y-4">
-              {bookings.map((booking) => (
-                <Card key={booking.id} className="p-6 hover:shadow-lg transition-shadow border-2 border-border">
+              {upcomingTrips.map((trip) => (
+                <Card key={trip.id} className="p-6 hover:shadow-lg transition-shadow border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
                       <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <Plane className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg text-foreground">
+                            {trip.type} - {trip.destination}
+                          </h3>
+                          <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent">
+                            {trip.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {trip.date}
+                          </div>
+                          <div>Booking ID: {trip.id}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          {trip.price}
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Bookings */}
+          <div className="mb-8">
+            <h2 className="font-luxury text-2xl font-bold text-foreground mb-6">
+              Recent Bookings
+            </h2>
+            <div className="space-y-4">
+              {recentTrips.map((booking) => (
+                <Card key={booking.id} className="p-6 hover:shadow-lg transition-shadow border-2 border-border">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center">
                         {booking.type === "Flight" ? (
-                          <Plane className="w-6 h-6 text-primary" />
+                          <Plane className="w-6 h-6 text-muted-foreground" />
                         ) : (
-                          <MapPin className="w-6 h-6 text-secondary" />
+                          <MapPin className="w-6 h-6 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex-1">
@@ -126,7 +214,7 @@ const Profile = () => {
                           <h3 className="font-semibold text-lg text-foreground">
                             {booking.type} - {booking.destination}
                           </h3>
-                          <Badge variant="outline" className={getStatusColor(booking.status)}>
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
                             {booking.status}
                           </Badge>
                         </div>
@@ -141,11 +229,11 @@ const Profile = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
+                        <p className="text-2xl font-bold text-foreground">
                           {booking.price}
                         </p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="ghost" size="sm">
                         View Details
                       </Button>
                     </div>
