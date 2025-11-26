@@ -37,8 +37,8 @@ const Splash = () => {
           Travax
         </h1>
         
-        <p className="text-muted-foreground text-lg tracking-[0.3em] uppercase animate-fade-in">
-          Luxury Business Travel
+        <p className="text-muted-foreground text-lg tracking-wide animate-fade-in mt-2">
+          AI-Powered Travel • Corporate Discounts • 24/7 Support • Seamless Bookings
         </p>
 
         {/* Loading indicator */}
