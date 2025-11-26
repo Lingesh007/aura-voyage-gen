@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plane, LogOut, User, Wallet, MapPin, Calendar, Award, TrendingUp, Globe, Gift } from "lucide-react";
 import ExploreOptions from "@/components/ExploreOptions";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { DashboardSearch } from "@/components/DashboardSearch";
 import heroImage from "@/assets/destination-beach.jpg";
 
 interface IndividualDashboardProps {
@@ -65,7 +67,8 @@ const IndividualDashboard = ({ onOpenAgent, user }: IndividualDashboardProps) =>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <GlobalSearch />
             <Button
               variant="outline"
               size="sm"
@@ -117,6 +120,11 @@ const IndividualDashboard = ({ onOpenAgent, user }: IndividualDashboardProps) =>
       {/* Main Content */}
       <main className="relative z-10 container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
+          {/* Dashboard Search */}
+          <div className="animate-fade-in">
+            <DashboardSearch />
+          </div>
+
           {/* Travel Perks Banner */}
           <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardContent className="pt-6">
