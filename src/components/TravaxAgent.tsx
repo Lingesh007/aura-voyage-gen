@@ -16,16 +16,26 @@ interface TravaxAgentProps {
 }
 
 const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hello! I'm your Travax AI assistant. I can help you plan trips, find the best flights and hotels, optimize your budget, and book everything for you. What would you like to do today?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userName, setUserName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || "there";
+      setUserName(name);
+      
+      setMessages([{
+        role: "assistant",
+        content: `Hello ${name}! I'm your Travax AI assistant. I can help you plan trips, find the best flights and hotels, optimize your budget, and book everything for you. What would you like to do today?`,
+      }]);
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,12 +43,13 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
+  const handleSend = async (messageText?: string) => {
+    const textToSend = messageText || input.trim();
+    if (!textToSend || loading) return;
 
     const userMessage: Message = {
       role: "user",
-      content: input,
+      content: textToSend,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -49,6 +60,7 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
       const { data, error } = await supabase.functions.invoke("travax-chat", {
         body: {
           messages: [...messages, userMessage],
+          userName,
         },
       });
 
@@ -69,6 +81,36 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (messages.length < 2) return;
+    
+    const lastUserMessage = messages
+      .slice()
+      .reverse()
+      .find(m => m.role === "user");
+    
+    if (!lastUserMessage) return;
+    
+    setMessages(prev => prev.slice(0, -1));
+    await handleSend(lastUserMessage.content);
+  };
+
+  const handleBook = (content: string) => {
+    const flightMatch = content.match(/flight|airline|departure|arrival/i);
+    const hotelMatch = content.match(/hotel|accommodation|stay|room/i);
+    
+    if (flightMatch) {
+      window.location.href = "/booking/flights";
+    } else if (hotelMatch) {
+      window.location.href = "/booking/hotels";
+    } else {
+      toast({
+        title: "Booking",
+        description: "Please specify what you'd like to book (flight, hotel, etc.)",
+      });
     }
   };
 
@@ -109,13 +151,34 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div
-                  className={`max-w-[80%] p-4 rounded-2xl ${
+                  className={`max-w-[80%] ${
                     message.role === "user"
-                      ? "bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-lg"
+                      ? "bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-lg p-4 rounded-2xl"
                       : "bg-card/80 backdrop-blur-sm text-foreground border border-border/50 shadow-md"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap p-4">{message.content}</p>
+                  
+                  {message.role === "assistant" && (
+                    <div className="flex gap-2 mt-3 px-4 pb-4 border-t border-border/30 pt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleBook(message.content)}
+                        className="text-xs"
+                      >
+                        Book
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleRegenerate}
+                        className="text-xs"
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -135,13 +198,13 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              onKeyPress={(e) => e.key === "Enter" && !loading && handleSend()}
               placeholder="Ask me anything about your travel plans..."
               className="flex-1 bg-card/80 backdrop-blur-sm border-border/50 focus:border-primary shadow-inner"
               disabled={loading}
             />
             <Button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={loading || !input.trim()}
               className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground shadow-lg"
             >
