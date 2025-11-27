@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Search, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plane, Clock, Globe, MapPin } from "lucide-react";
 import { SearchService, SearchResult } from "@/services/SearchService";
 
 export const DashboardSearch = () => {
@@ -34,6 +35,28 @@ export const DashboardSearch = () => {
     setIsOpen(searchResults.length > 0);
   };
 
+  const handleResultClick = (result: SearchResult) => {
+    if (result.type === 'history') {
+      setQuery(result.title);
+      handleSearch(result.title);
+      return;
+    }
+    setIsOpen(false);
+  };
+
+  const getResultIcon = (type: string) => {
+    switch (type) {
+      case 'flight':
+        return <Plane className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />;
+      case 'history':
+        return <Clock className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />;
+      case 'web':
+        return <Globe className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />;
+      default:
+        return <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />;
+    }
+  };
+
   return (
     <div ref={searchRef} className="relative w-full">
       <div className="relative">
@@ -54,18 +77,31 @@ export const DashboardSearch = () => {
             {results.map((result, index) => (
               <div
                 key={index}
+                onClick={() => handleResultClick(result)}
                 className="p-4 rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  {getResultIcon(result.type)}
                   <div className="flex-1">
-                    <div className="font-semibold text-sm">{result.title}</div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-semibold text-sm">{result.title}</div>
+                      {result.price && (
+                        <Badge variant="secondary" className="text-xs">
+                          {result.price}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground mt-1">{result.description}</div>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                         {result.type}
                       </span>
-                      <span className="text-xs text-muted-foreground capitalize">{result.category}</span>
+                      {result.category && (
+                        <span className="text-xs text-muted-foreground capitalize">{result.category}</span>
+                      )}
+                      {result.duration && (
+                        <span className="text-xs text-muted-foreground">{result.duration}</span>
+                      )}
                     </div>
                   </div>
                 </div>
