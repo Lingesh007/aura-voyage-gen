@@ -22,7 +22,7 @@ const IndividualDashboard = ({ onOpenAgent, user }: IndividualDashboardProps) =>
   };
 
   const userData = {
-    name: user?.user_metadata?.full_name || "Travel Enthusiast",
+    name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Travel Enthusiast",
     upcomingTrips: [
       { destination: "Bali, Indonesia", date: "Feb 15-22, 2024", type: "Leisure", status: "Confirmed" },
       { destination: "Paris, France", date: "Mar 10-17, 2024", type: "City Break", status: "Pending" }

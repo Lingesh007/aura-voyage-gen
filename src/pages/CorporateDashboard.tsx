@@ -21,6 +21,8 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
     await supabase.auth.signOut();
   };
 
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
+  
   const companyData = {
     name: "TechCorp International",
     employeesOnTrip: 12,
@@ -54,7 +56,7 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
               <h1 className="font-luxury text-3xl font-bold text-gradient-pastel">
                 Travax
               </h1>
-              <p className="text-xs text-muted-foreground">{companyData.name}</p>
+              <p className="text-xs text-muted-foreground">Welcome, {userName.split(' ')[0]}</p>
             </div>
           </div>
 
