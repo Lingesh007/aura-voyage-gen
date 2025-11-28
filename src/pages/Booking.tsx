@@ -31,7 +31,58 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     phone: ""
   });
 
-  const getOptions = () => {
+  // Parse AI response details if coming from agent
+  const fromAgent = searchParams.get("fromAgent") === "true";
+  const aiDetails = searchParams.get("details") || "";
+
+  const parseAIOptions = () => {
+    if (!aiDetails) return [];
+    
+    // Extract options from AI response
+    const options = [];
+    const lines = aiDetails.split('\n');
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Look for patterns like "1. Hotel Name" or "Option 1:" or numbered items
+      if (line.match(/^(\d+[\.\):]|\*\*\d+|Option\s+\d+)/i)) {
+        const optionText = line.replace(/^(\d+[\.\):]|\*\*\d+[\.\):]?|\*\*|Option\s+\d+:?)\s*/i, '');
+        
+        // Extract price if present
+        const priceMatch = optionText.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+        const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 500;
+        
+        options.push({
+          image: type === "flights" ? flightAirplane : type === "hotels" ? hotelParis : type === "activities" ? hotelTokyo : flightBusiness,
+          destination: optionText.split(/[-–—]|:|\|/)[0].trim(),
+          name: optionText,
+          description: lines[i + 1]?.trim() || optionText,
+          price: price,
+          details: optionText
+        });
+      }
+    }
+    
+    // If no structured options found, create a single option from the entire response
+    if (options.length === 0 && aiDetails) {
+      const priceMatch = aiDetails.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+      const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 500;
+      
+      options.push({
+        image: type === "flights" ? flightAirplane : type === "hotels" ? hotelParis : type === "activities" ? hotelTokyo : flightBusiness,
+        destination: type ? type.charAt(0).toUpperCase() + type.slice(1) : "Option",
+        name: "AI Recommended Option",
+        description: aiDetails.substring(0, 200) + (aiDetails.length > 200 ? "..." : ""),
+        price: price,
+        details: aiDetails
+      });
+    }
+    
+    return options.slice(0, 6); // Limit to 6 options
+  };
+
+  const getStaticOptions = () => {
     switch (type) {
       case "flights":
         return [
@@ -164,7 +215,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     }
   };
 
-  const options = getOptions();
+  const options = fromAgent ? parseAIOptions() : getStaticOptions();
 
   const getIcon = () => {
     switch (type) {
@@ -316,99 +367,115 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
 
             {/* Booking Options */}
             <div className="space-y-6 mb-8">
-              <h3 className="font-semibold text-lg">Select Your Option</h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                {options.map((option: any, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedOption(i)}
-                    className={`group relative rounded-2xl overflow-hidden border-2 transition-all duration-300 hover:scale-[1.02] text-left ${
-                      selectedOption === i
-                        ? "border-primary shadow-xl ring-2 ring-primary/50"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="aspect-video overflow-hidden">
-                      <img 
-                        src={option.image} 
-                        alt={option.destination}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    </div>
-                    <div className="p-5 bg-card">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-luxury text-xl font-bold text-foreground mb-1">
-                            {option.destination}
-                          </h4>
-                          {type === "hotels" && option.name && (
-                            <p className="text-sm text-muted-foreground">{option.name}</p>
-                          )}
-                          {type === "flights" && option.departure && (
-                            <p className="text-xs text-muted-foreground">{option.departure} → {option.arrival}</p>
-                          )}
-                          {type === "visas" && option.name && (
-                            <p className="text-sm text-muted-foreground">{option.name}</p>
-                          )}
-                          {type === "activities" && option.name && (
-                            <p className="text-sm text-muted-foreground">{option.name}</p>
+              <h3 className="font-semibold text-lg">
+                {fromAgent ? "AI Recommended Options" : "Select Your Option"}
+              </h3>
+              {options.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No options available. Try using the AI assistant for personalized recommendations.</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {options.map((option: any, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedOption(i)}
+                      className={`group relative rounded-2xl overflow-hidden border-2 transition-all duration-300 hover:scale-[1.02] text-left ${
+                        selectedOption === i
+                          ? "border-primary shadow-xl ring-2 ring-primary/50"
+                          : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="aspect-video overflow-hidden">
+                        <img 
+                          src={option.image} 
+                          alt={option.destination}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      </div>
+                      <div className="p-5 bg-card">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-luxury text-xl font-bold text-foreground mb-1">
+                              {option.destination}
+                            </h4>
+                            {fromAgent ? (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{option.description}</p>
+                            ) : (
+                              <>
+                                {type === "hotels" && option.name && (
+                                  <p className="text-sm text-muted-foreground">{option.name}</p>
+                                )}
+                                {type === "flights" && option.departure && (
+                                  <p className="text-xs text-muted-foreground">{option.departure} → {option.arrival}</p>
+                                )}
+                                {type === "visas" && option.name && (
+                                  <p className="text-sm text-muted-foreground">{option.name}</p>
+                                )}
+                                {type === "activities" && option.name && (
+                                  <p className="text-sm text-muted-foreground">{option.name}</p>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          {!fromAgent && type === "hotels" && option.rating && (
+                            <div className="flex items-center gap-1 text-accent">
+                              {[...Array(option.rating)].map((_, i) => (
+                                <Star key={i} className="w-3 h-3 fill-current" />
+                              ))}
+                            </div>
                           )}
                         </div>
-                        {type === "hotels" && option.rating && (
-                          <div className="flex items-center gap-1 text-accent">
-                            {[...Array(option.rating)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-current" />
-                            ))}
+                        
+                        {!fromAgent && (
+                          <div className="space-y-2 text-xs text-muted-foreground mb-4">
+                            {type === "flights" && (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-3 h-3" />
+                                  {option.duration} • {option.class}
+                                </div>
+                                <div>{option.date}</div>
+                              </>
+                            )}
+                            {type === "hotels" && (
+                              <>
+                                <div>{option.location} • {option.date}</div>
+                                <div>{option.amenities}</div>
+                              </>
+                            )}
+                            {type === "visas" && (
+                              <>
+                                <div>{option.type} • {option.validity}</div>
+                                <div>Processing: {option.processingTime}</div>
+                              </>
+                            )}
+                            {type === "activities" && (
+                              <>
+                                <div>{option.duration} • Up to {option.participants} people</div>
+                                <div>Includes: {option.includes}</div>
+                              </>
+                            )}
                           </div>
                         )}
-                      </div>
-                      
-                      <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                        {type === "flights" && (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-3 h-3" />
-                              {option.duration} • {option.class}
-                            </div>
-                            <div>{option.date}</div>
-                          </>
-                        )}
-                        {type === "hotels" && (
-                          <>
-                            <div>{option.location} • {option.date}</div>
-                            <div>{option.amenities}</div>
-                          </>
-                        )}
-                        {type === "visas" && (
-                          <>
-                            <div>{option.type} • {option.validity}</div>
-                            <div>Processing: {option.processingTime}</div>
-                          </>
-                        )}
-                        {type === "activities" && (
-                          <>
-                            <div>{option.duration} • Up to {option.participants} people</div>
-                            <div>Includes: {option.includes}</div>
-                          </>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <span className="text-2xl font-bold text-primary">
-                          ${option.price}
-                        </span>
-                        <div className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                          selectedOption === i
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          {selectedOption === i ? "Selected" : "Select"}
+                        
+                        <div className="flex items-center justify-between pt-3 border-t border-border">
+                          <span className="text-2xl font-bold text-primary">
+                            ${option.price}
+                          </span>
+                          <div className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                            selectedOption === i
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            {selectedOption === i ? "Selected" : "Select"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="text-center">
