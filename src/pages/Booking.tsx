@@ -1,7 +1,9 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import hotelParis from "@/assets/hotel-paris.jpg";
@@ -19,8 +21,15 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [travelerDetails, setTravelerDetails] = useState({
+    name: "",
+    age: "",
+    email: "",
+    phone: ""
+  });
 
   const getOptions = () => {
     switch (type) {
@@ -186,17 +195,27 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
       return;
     }
 
+    if (!travelerDetails.name || !travelerDetails.age || !travelerDetails.email || !travelerDetails.phone) {
+      toast({
+        title: "Traveler Details Required",
+        description: "Please fill in all traveler details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       toast({
-        title: "Booking Initiated",
-        description: "Your booking request has been submitted.",
+        title: "Booking Confirmed",
+        description: "Your booking has been successfully confirmed.",
       });
       navigate("/confirmation", { 
         state: { 
           type: type,
           option: options[selectedOption],
+          travelerDetails: travelerDetails,
           bookingId: `TVX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
         } 
       });
@@ -242,8 +261,62 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
               </p>
             </div>
 
+            {/* Traveler Details Form */}
+            <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg">Traveler Details</h3>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    value={travelerDetails.name}
+                    onChange={(e) => setTravelerDetails({...travelerDetails, name: e.target.value})}
+                    placeholder="John Doe"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="age">Age *</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={travelerDetails.age}
+                    onChange={(e) => setTravelerDetails({...travelerDetails, age: e.target.value})}
+                    placeholder="30"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={travelerDetails.email}
+                    onChange={(e) => setTravelerDetails({...travelerDetails, email: e.target.value})}
+                    placeholder="john@example.com"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={travelerDetails.phone}
+                    onChange={(e) => setTravelerDetails({...travelerDetails, phone: e.target.value})}
+                    placeholder="+1 234 567 8900"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Booking Options */}
             <div className="space-y-6 mb-8">
+              <h3 className="font-semibold text-lg">Select Your Option</h3>
               <div className="grid md:grid-cols-3 gap-6">
                 {options.map((option: any, i) => (
                   <button

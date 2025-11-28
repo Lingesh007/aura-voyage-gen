@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Download, Calendar, MapPin } from "lucide-react";
+import { CheckCircle, Download, Calendar, MapPin, User, Mail, Phone, Hash } from "lucide-react";
 
 const Confirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { type, bookingId } = location.state || {};
+  const { type, bookingId, option, travelerDetails } = location.state || {};
 
   return (
     <div className="min-h-screen bg-luxury-charcoal relative overflow-hidden">
@@ -53,6 +53,70 @@ const Confirmation = () => {
                 <span className="text-muted-foreground">Status:</span>
                 <span className="text-green-400 font-semibold">Confirmed</span>
               </div>
+
+              {option && (
+                <div className="pt-4 border-t border-luxury-slate/40">
+                  <h4 className="font-semibold mb-2 text-foreground">Booking Details:</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Destination:</span>
+                      <span className="font-medium">{option.destination}</span>
+                    </div>
+                    {option.name && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {type === "hotels" ? "Hotel" : type === "visas" ? "Visa Type" : "Package"}:
+                        </span>
+                        <span className="font-medium">{option.name}</span>
+                      </div>
+                    )}
+                    {option.departure && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Route:</span>
+                        <span className="font-medium">{option.departure} → {option.arrival}</span>
+                      </div>
+                    )}
+                    {option.date && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Date:</span>
+                        <span className="font-medium">{option.date}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-luxury-slate/30">
+                      <span className="text-muted-foreground">Price:</span>
+                      <span className="font-bold text-primary">${option.price}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {travelerDetails && (
+                <div className="pt-4 border-t border-luxury-slate/40">
+                  <h4 className="font-semibold mb-2 text-foreground">Traveler Information:</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="font-medium">{travelerDetails.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Age:</span>
+                      <span className="font-medium">{travelerDetails.age}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium">{travelerDetails.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Phone:</span>
+                      <span className="font-medium">{travelerDetails.phone}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-luxury-slate/40">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">

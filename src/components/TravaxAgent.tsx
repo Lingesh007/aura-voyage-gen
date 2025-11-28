@@ -98,18 +98,25 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
     await handleSend(lastUserMessage.content);
   };
 
-  const handleBook = (content: string) => {
+  const handleBook = (content: string, messageIndex: number) => {
+    // Only allow booking after first response (index 1)
+    if (messageIndex < 1) return;
+    
     const flightMatch = content.match(/flight|airline|departure|arrival/i);
     const hotelMatch = content.match(/hotel|accommodation|stay|room/i);
+    const activityMatch = content.match(/activity|activities|tour|experience/i);
     
-    if (flightMatch) {
-      window.location.href = "/booking/flights";
-    } else if (hotelMatch) {
-      window.location.href = "/booking/hotels";
+    let bookingType = "";
+    if (flightMatch) bookingType = "flights";
+    else if (hotelMatch) bookingType = "hotels";
+    else if (activityMatch) bookingType = "activities";
+    
+    if (bookingType) {
+      window.location.href = `/booking/${bookingType}?fromAgent=true&details=${encodeURIComponent(content)}`;
     } else {
       toast({
         title: "Booking",
-        description: "Please specify what you'd like to book (flight, hotel, etc.)",
+        description: "Please specify what you'd like to book (flight, hotel, or activity)",
       });
     }
   };
@@ -159,12 +166,12 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
                 >
                   <p className="whitespace-pre-wrap p-4">{message.content}</p>
                   
-                  {message.role === "assistant" && (
+                  {message.role === "assistant" && index > 0 && (
                     <div className="flex gap-2 mt-3 px-4 pb-4 border-t border-border/30 pt-3">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleBook(message.content)}
+                        onClick={() => handleBook(message.content, index)}
                         className="text-xs"
                       >
                         Book
