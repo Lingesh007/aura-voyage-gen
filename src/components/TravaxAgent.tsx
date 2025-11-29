@@ -102,23 +102,141 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
     // Only allow booking after first response (index 1)
     if (messageIndex < 1) return;
     
+    // Determine booking type
     const flightMatch = content.match(/flight|airline|departure|arrival/i);
     const hotelMatch = content.match(/hotel|accommodation|stay|room/i);
     const activityMatch = content.match(/activity|activities|tour|experience/i);
+    const visaMatch = content.match(/visa|travel document|entry permit/i);
     
     let bookingType = "";
     if (flightMatch) bookingType = "flights";
     else if (hotelMatch) bookingType = "hotels";
     else if (activityMatch) bookingType = "activities";
+    else if (visaMatch) bookingType = "visas";
     
     if (bookingType) {
-      window.location.href = `/booking/${bookingType}?fromAgent=true&details=${encodeURIComponent(content)}`;
+      // Extract structured booking information from AI response
+      const bookingData = {
+        type: bookingType,
+        rawResponse: content,
+        options: extractBookingOptions(content, bookingType),
+        timestamp: Date.now()
+      };
+      
+      // Store in sessionStorage for the booking page to access
+      sessionStorage.setItem('agentBookingData', JSON.stringify(bookingData));
+      
+      window.location.href = `/booking/${bookingType}?fromAgent=true`;
     } else {
       toast({
         title: "Booking",
-        description: "Please specify what you'd like to book (flight, hotel, or activity)",
+        description: "Please specify what you'd like to book (flight, hotel, activity, or visa)",
       });
     }
+  };
+
+  const extractBookingOptions = (content: string, type: string) => {
+    const options: any[] = [];
+    
+    // Split content into lines and look for structured information
+    const lines = content.split('\n').filter(line => line.trim());
+    
+    // Extract destinations, prices, and names from the content
+    const priceRegex = /\$[\d,]+|\$\s*[\d,]+|USD\s*[\d,]+|[\d,]+\s*USD/gi;
+    const prices = content.match(priceRegex) || [];
+    
+    // Extract potential destination names (capitalized words, city names)
+    const destinations = content.match(/(?:to|in|at|visit)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g) || [];
+    
+    // Try to extract structured options based on type
+    if (type === 'flights') {
+      // Look for flight patterns like "City1 to City2"
+      const routes = content.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:to|→)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi) || [];
+      routes.forEach((route, idx) => {
+        const [departure, arrival] = route.split(/\s+(?:to|→)\s+/i);
+        options.push({
+          departure: departure?.trim(),
+          arrival: arrival?.trim(),
+          price: prices[idx]?.replace(/[^\d]/g, '') || Math.floor(Math.random() * 500 + 200),
+          destination: arrival?.trim(),
+          date: extractDateFromText(content)
+        });
+      });
+    } else if (type === 'hotels') {
+      // Look for hotel names (often include "Hotel", "Resort", "Inn", etc.)
+      const hotelNames = content.match(/([A-Z][a-zA-Z\s&]+(?:Hotel|Resort|Inn|Lodge|Suites|Grand|Palace))/g) || [];
+      hotelNames.forEach((name, idx) => {
+        options.push({
+          name: name.trim(),
+          price: prices[idx]?.replace(/[^\d]/g, '') || Math.floor(Math.random() * 300 + 100),
+          destination: extractDestinationNear(content, name),
+          rating: Math.floor(Math.random() * 2 + 4) // 4-5 stars
+        });
+      });
+    } else if (type === 'activities') {
+      // Look for activity descriptions
+      const activities = content.match(/(?:\d+[\.)]\s+)?([A-Z][^.!?\n]+(?:tour|experience|visit|adventure|excursion|safari|cruise))/gi) || [];
+      activities.forEach((activity, idx) => {
+        options.push({
+          name: activity.replace(/^\d+[\.)]\s*/, '').trim(),
+          price: prices[idx]?.replace(/[^\d]/g, '') || Math.floor(Math.random() * 150 + 50),
+          destination: extractDestinationFromActivity(activity),
+          duration: extractDurationFromText(content)
+        });
+      });
+    } else if (type === 'visas') {
+      // Look for visa types and countries
+      const visaTypes = content.match(/([A-Z][a-zA-Z\s]+(?:visa|Visa|entry permit))/gi) || [];
+      visaTypes.forEach((visaType, idx) => {
+        options.push({
+          name: visaType.trim(),
+          price: prices[idx]?.replace(/[^\d]/g, '') || Math.floor(Math.random() * 200 + 50),
+          destination: extractCountryName(content),
+          processing: '5-7 business days'
+        });
+      });
+    }
+    
+    // If no structured options found, create a generic one from the full content
+    if (options.length === 0 && prices.length > 0) {
+      options.push({
+        name: content.substring(0, 100).trim() + (content.length > 100 ? '...' : ''),
+        price: prices[0]?.replace(/[^\d]/g, '') || Math.floor(Math.random() * 500 + 200),
+        destination: destinations[0]?.replace(/(?:to|in|at|visit)\s+/i, '').trim() || 'Various',
+        details: content
+      });
+    }
+    
+    return options.slice(0, 6); // Limit to 6 options
+  };
+
+  const extractDateFromText = (text: string) => {
+    const dateMatch = text.match(/(?:on|from|starting)\s+([A-Z][a-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)/i);
+    return dateMatch ? dateMatch[1] : new Date().toLocaleDateString();
+  };
+
+  const extractDestinationNear = (text: string, reference: string) => {
+    const refIndex = text.indexOf(reference);
+    const before = text.substring(Math.max(0, refIndex - 100), refIndex);
+    const after = text.substring(refIndex, refIndex + 100);
+    const combined = before + after;
+    const destMatch = combined.match(/(?:in|at|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+    return destMatch ? destMatch[1] : 'International';
+  };
+
+  const extractDestinationFromActivity = (activity: string) => {
+    const match = activity.match(/(?:in|at|of)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+    return match ? match[1] : 'Various Locations';
+  };
+
+  const extractCountryName = (text: string) => {
+    const countries = text.match(/(?:for|to|in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:visa|entry)/i);
+    return countries ? countries[1] : 'International';
+  };
+
+  const extractDurationFromText = (text: string) => {
+    const durationMatch = text.match(/(\d+)\s*(?:hours?|hrs?|days?)/i);
+    return durationMatch ? durationMatch[0] : '4 hours';
   };
 
   return (
