@@ -2,20 +2,88 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Download, Calendar, MapPin, User, Mail, Phone, Hash } from "lucide-react";
+import { jsPDF } from "jspdf";
+import { useToast } from "@/hooks/use-toast";
 
 const Confirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { type, bookingId, option, travelerDetails } = location.state || {};
 
-  return (
-    <div className="min-h-screen bg-luxury-charcoal relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-luxury-charcoal via-luxury-navy to-luxury-slate opacity-50" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text("Travax Booking Confirmation", 20, 20);
+    
+    // Add booking details
+    doc.setFontSize(12);
+    doc.text(`Booking ID: ${bookingId || "TVX-XXXXXXX"}`, 20, 40);
+    doc.text(`Service Type: ${type || "Travel Service"}`, 20, 50);
+    doc.text(`Status: Confirmed`, 20, 60);
+    
+    let yPos = 80;
+    
+    // Add option details
+    if (option) {
+      doc.setFontSize(14);
+      doc.text("Booking Details:", 20, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(11);
+      doc.text(`Destination: ${option.destination}`, 25, yPos);
+      yPos += 8;
+      
+      if (option.name) {
+        doc.text(`${type === "hotels" ? "Hotel" : type === "visas" ? "Visa Type" : "Package"}: ${option.name}`, 25, yPos);
+        yPos += 8;
+      }
+      
+      if (option.departure) {
+        doc.text(`Route: ${option.departure} → ${option.arrival}`, 25, yPos);
+        yPos += 8;
+      }
+      
+      if (option.date) {
+        doc.text(`Date: ${option.date}`, 25, yPos);
+        yPos += 8;
+      }
+      
+      doc.text(`Price: $${option.price}`, 25, yPos);
+      yPos += 15;
+    }
+    
+    // Add traveler details
+    if (travelerDetails) {
+      doc.setFontSize(14);
+      doc.text("Traveler Information:", 20, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(11);
+      doc.text(`Name: ${travelerDetails.name}`, 25, yPos);
+      yPos += 8;
+      doc.text(`Age: ${travelerDetails.age}`, 25, yPos);
+      yPos += 8;
+      doc.text(`Email: ${travelerDetails.email}`, 25, yPos);
+      yPos += 8;
+      doc.text(`Phone: ${travelerDetails.phone}`, 25, yPos);
+    }
+    
+    // Save PDF
+    doc.save(`Travax-Booking-${bookingId || "Confirmation"}.pdf`);
+    
+    toast({
+      title: "PDF Downloaded",
+      description: "Your booking confirmation has been downloaded successfully.",
+    });
+  };
 
+  return (
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl p-8 bg-card/50 backdrop-blur-xl border-luxury-slate animate-scale-in text-center">
+        <Card className="w-full max-w-2xl p-6 md:p-8 bg-card border shadow-lg animate-scale-in text-center">
           {/* Success icon */}
           <div className="mb-6 flex justify-center">
             <div className="relative">
@@ -24,7 +92,7 @@ const Confirmation = () => {
             </div>
           </div>
 
-          <h1 className="font-luxury text-4xl font-bold text-gradient-gold mb-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
             Booking Confirmed!
           </h1>
           
@@ -33,29 +101,29 @@ const Confirmation = () => {
           </p>
 
           {/* Booking details */}
-          <div className="bg-luxury-slate/20 rounded-xl p-6 mb-8 border border-luxury-slate/40">
+          <div className="bg-muted/30 rounded-lg p-4 md:p-6 mb-8 border">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Booking ID:</span>
-                <span className="font-mono text-luxury-gold font-semibold">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-muted-foreground text-sm">Booking ID:</span>
+                <span className="font-mono text-primary font-semibold text-sm">
                   {bookingId || "TVX-XXXXXXX"}
                 </span>
               </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Service Type:</span>
-                <span className="font-semibold text-foreground capitalize">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-muted-foreground text-sm">Service Type:</span>
+                <span className="font-semibold text-foreground capitalize text-sm">
                   {type || "Travel Service"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <span className="text-green-400 font-semibold">Confirmed</span>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-muted-foreground text-sm">Status:</span>
+                <span className="text-green-600 font-semibold text-sm">Confirmed</span>
               </div>
 
               {option && (
-                <div className="pt-4 border-t border-luxury-slate/40">
+                <div className="pt-4 border-t">
                   <h4 className="font-semibold mb-2 text-foreground">Booking Details:</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
@@ -91,7 +159,7 @@ const Confirmation = () => {
               )}
 
               {travelerDetails && (
-                <div className="pt-4 border-t border-luxury-slate/40">
+                <div className="pt-4 border-t">
                   <h4 className="font-semibold mb-2 text-foreground">Traveler Information:</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
@@ -118,7 +186,7 @@ const Confirmation = () => {
                 </div>
               )}
 
-              <div className="pt-4 border-t border-luxury-slate/40">
+              <div className="pt-4 border-t">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Calendar className="w-4 h-4" />
                   <span>Confirmation sent to your email</span>
@@ -132,28 +200,27 @@ const Confirmation = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               variant="outline"
-              className="border-luxury-slate hover:bg-luxury-slate/20"
+              onClick={handleDownloadPDF}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Receipt
+              Download PDF
             </Button>
             
             <Button
               onClick={() => navigate("/dashboard")}
-              className="bg-luxury-gold hover:bg-luxury-gold-dark text-luxury-charcoal font-semibold"
             >
               Back to Dashboard
             </Button>
           </div>
 
           {/* Support info */}
-          <div className="mt-8 pt-6 border-t border-luxury-slate/40">
-            <p className="text-sm text-muted-foreground">
-              Need help? Contact our 24/7 concierge service at{" "}
-              <a href="mailto:support@travax.com" className="text-luxury-gold hover:underline">
+          <div className="mt-8 pt-6 border-t">
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Need help? Contact our 24/7 support at{" "}
+              <a href="mailto:support@travax.com" className="text-primary hover:underline">
                 support@travax.com
               </a>
             </p>

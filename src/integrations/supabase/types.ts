@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          booking_details: Json | null
+          booking_id: string
+          booking_type: string
+          created_at: string
+          destination: string | null
+          id: string
+          price: number | null
+          status: string | null
+          traveler_details: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          booking_details?: Json | null
+          booking_id: string
+          booking_type: string
+          created_at?: string
+          destination?: string | null
+          id?: string
+          price?: number | null
+          status?: string | null
+          traveler_details?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          booking_details?: Json | null
+          booking_id?: string
+          booking_type?: string
+          created_at?: string
+          destination?: string | null
+          id?: string
+          price?: number | null
+          status?: string | null
+          traveler_details?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       search_history: {
         Row: {
           category: string | null
