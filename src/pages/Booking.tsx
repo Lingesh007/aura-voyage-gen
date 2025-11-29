@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import hotelParis from "@/assets/hotel-paris.jpg";
 import hotelDubai from "@/assets/hotel-dubai.jpg";
 import hotelTokyo from "@/assets/hotel-tokyo.jpg";
@@ -236,7 +237,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     return type ? type.charAt(0).toUpperCase() + type.slice(1) : "Booking";
   };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (selectedOption === null) {
       toast({
         title: "Selection Required",
@@ -256,21 +257,58 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Booking Confirmed",
-        description: "Your booking has been successfully confirmed.",
+    
+    const bookingId = `TVX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const selectedBooking = options[selectedOption];
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Save booking to database
+      const { error } = await supabase.from('bookings').insert({
+        user_id: user?.id,
+        booking_id: bookingId,
+        booking_type: type || 'travel',
+        destination: selectedBooking.destination,
+        booking_details: selectedBooking,
+        traveler_details: travelerDetails,
+        price: selectedBooking.price,
+        status: 'confirmed'
       });
+      
+      if (error) {
+        console.error('Error saving booking:', error);
+        toast({
+          title: "Booking Saved Locally",
+          description: "Your booking was confirmed but couldn't be saved to history.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Booking Confirmed",
+          description: "Your booking has been successfully confirmed and saved.",
+        });
+      }
+      
+      setLoading(false);
       navigate("/confirmation", { 
         state: { 
           type: type,
-          option: options[selectedOption],
+          option: selectedBooking,
           travelerDetails: travelerDetails,
-          bookingId: `TVX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+          bookingId: bookingId
         } 
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Booking error:', error);
+      setLoading(false);
+      toast({
+        title: "Error",
+        description: "An error occurred while processing your booking.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

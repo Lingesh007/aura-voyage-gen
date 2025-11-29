@@ -7,6 +7,7 @@ import { Plane, LogOut, User, Wallet, Users, Clock, DollarSign, FileCheck, Trend
 import ExploreOptions from "@/components/ExploreOptions";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { DashboardSearch } from "@/components/DashboardSearch";
+import { BookingHistory } from "@/components/BookingHistory";
 import heroImage from "@/assets/destination-beach.jpg";
 
 interface CorporateDashboardProps {
@@ -45,65 +46,64 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Header */}
-      <header className="relative z-10 border-b border-border/50 backdrop-blur-xl bg-card/90 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 blur-xl bg-primary opacity-40 animate-pulse" />
-              <Plane className="w-8 h-8 text-primary relative" strokeWidth={1.5} />
-            </div>
+            <Plane className="w-6 h-6 md:w-8 md:h-8 text-primary" strokeWidth={1.5} />
             <div>
-              <h1 className="font-luxury text-3xl font-bold text-gradient-pastel">
+              <h1 className="text-2xl md:text-3xl font-bold text-primary">
                 Travax
               </h1>
-              <p className="text-xs text-muted-foreground">Welcome, {userName.split(' ')[0]}</p>
+              <p className="text-xs text-muted-foreground hidden md:block">Welcome, {userName.split(' ')[0]}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
             <GlobalSearch />
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => navigate("/profile")}
+              className="hidden md:flex"
             >
               <User className="w-4 h-4 mr-2" />
               Profile
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => navigate("/budget-tracker")}
+              className="hidden md:flex"
             >
               <Wallet className="w-4 h-4 mr-2" />
               Budget
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={handleSignOut}
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <LogOut className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Hero Banner */}
-      <div className="relative h-[300px] overflow-hidden">
+      <div className="relative h-[200px] md:h-[300px] overflow-hidden">
         <img 
           src={heroImage} 
           alt="Corporate travel excellence" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center animate-fade-in px-4">
-            <h2 className="font-luxury text-4xl md:text-5xl font-bold text-white drop-shadow-2xl mb-2">
+            <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl mb-2">
               Corporate Travel Command Center
             </h2>
-            <p className="text-white/90 text-lg drop-shadow-lg">
+            <p className="text-white/90 text-sm md:text-lg drop-shadow-lg">
               Enterprise discounts • Priority support • Streamlined approvals
             </p>
           </div>
@@ -119,7 +119,7 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
           </div>
 
           {/* Corporate Benefits Banner */}
-          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <Card className="border bg-muted/30">
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
@@ -146,8 +146,10 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
             </CardContent>
           </Card>
 
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Key Metrics & Booking History */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -200,6 +202,12 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
                 <p className="text-sm text-muted-foreground">{companyData.visasPending} pending approval</p>
               </CardContent>
             </Card>
+              </div>
+            </div>
+            
+            <div className="lg:col-span-1">
+              <BookingHistory />
+            </div>
           </div>
 
           {/* Active Trips */}
