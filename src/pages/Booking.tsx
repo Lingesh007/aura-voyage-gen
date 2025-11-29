@@ -34,53 +34,43 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
 
   // Parse AI response details if coming from agent
   const fromAgent = searchParams.get("fromAgent") === "true";
-  const aiDetails = searchParams.get("details") || "";
-
+  
   const parseAIOptions = () => {
-    if (!aiDetails) return [];
+    // Try to get booking data from sessionStorage
+    const storedData = sessionStorage.getItem('agentBookingData');
+    if (!storedData) return [];
     
-    // Extract options from AI response
-    const options = [];
-    const lines = aiDetails.split('\n');
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    try {
+      const bookingData = JSON.parse(storedData);
       
-      // Look for patterns like "1. Hotel Name" or "Option 1:" or numbered items
-      if (line.match(/^(\d+[\.\):]|\*\*\d+|Option\s+\d+)/i)) {
-        const optionText = line.replace(/^(\d+[\.\):]|\*\*\d+[\.\):]?|\*\*|Option\s+\d+:?)\s*/i, '');
+      // Map the extracted options to the format expected by the UI
+      return bookingData.options.map((option: any, index: number) => {
+        const imageMap: Record<string, string> = {
+          flights: [flightAirplane, flightBusiness, flightLounge][index % 3],
+          hotels: [hotelParis, hotelDubai, hotelTokyo][index % 3],
+          activities: [hotelParis, hotelDubai, hotelTokyo][index % 3],
+          visas: [flightAirplane, flightBusiness, flightLounge][index % 3]
+        };
         
-        // Extract price if present
-        const priceMatch = optionText.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
-        const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 500;
-        
-        options.push({
-          image: type === "flights" ? flightAirplane : type === "hotels" ? hotelParis : type === "activities" ? hotelTokyo : flightBusiness,
-          destination: optionText.split(/[-–—]|:|\|/)[0].trim(),
-          name: optionText,
-          description: lines[i + 1]?.trim() || optionText,
-          price: price,
-          details: optionText
-        });
-      }
-    }
-    
-    // If no structured options found, create a single option from the entire response
-    if (options.length === 0 && aiDetails) {
-      const priceMatch = aiDetails.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/);
-      const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '')) : 500;
-      
-      options.push({
-        image: type === "flights" ? flightAirplane : type === "hotels" ? hotelParis : type === "activities" ? hotelTokyo : flightBusiness,
-        destination: type ? type.charAt(0).toUpperCase() + type.slice(1) : "Option",
-        name: "AI Recommended Option",
-        description: aiDetails.substring(0, 200) + (aiDetails.length > 200 ? "..." : ""),
-        price: price,
-        details: aiDetails
+        return {
+          image: imageMap[bookingData.type] || flightAirplane,
+          destination: option.destination || 'Various',
+          name: option.name || option.destination,
+          description: option.details || option.name || 'Recommended by AI',
+          price: typeof option.price === 'string' ? parseFloat(option.price) : option.price,
+          departure: option.departure,
+          arrival: option.arrival,
+          date: option.date,
+          duration: option.duration,
+          rating: option.rating,
+          processing: option.processing,
+          details: option
+        };
       });
+    } catch (error) {
+      console.error('Error parsing booking data:', error);
+      return [];
     }
-    
-    return options.slice(0, 6); // Limit to 6 options
   };
 
   const getStaticOptions = () => {
@@ -290,6 +280,9 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           description: "Your booking has been successfully confirmed and saved.",
         });
       }
+      
+      // Clear the agent booking data from sessionStorage
+      sessionStorage.removeItem('agentBookingData');
       
       setLoading(false);
       navigate("/confirmation", { 
