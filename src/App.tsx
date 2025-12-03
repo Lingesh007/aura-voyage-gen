@@ -11,6 +11,7 @@ import Booking from "./pages/Booking";
 import Confirmation from "./pages/Confirmation";
 import Profile from "./pages/Profile";
 import BudgetTracker from "./pages/BudgetTracker";
+import Approvals from "./pages/Approvals";
 import NotFound from "./pages/NotFound";
 import TravaxAgent from "./components/TravaxAgent";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const App = () => {
             <Route path="/confirmation" element={<Confirmation />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/budget-tracker" element={<BudgetTracker />} />
+            <Route path="/approvals" element={<Approvals />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           

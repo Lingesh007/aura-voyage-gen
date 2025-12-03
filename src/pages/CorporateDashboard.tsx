@@ -246,7 +246,7 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard?tab=approvals")}>
+                <Button variant="outline" className="w-full" onClick={() => navigate("/approvals")}>
                   View All Approvals
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

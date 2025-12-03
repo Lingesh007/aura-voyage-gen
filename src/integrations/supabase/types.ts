@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      approval_actions: {
+        Row: {
+          action: string
+          action_by: string
+          comment: string | null
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          action: string
+          action_by: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          action?: string
+          action_by?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_actions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_details: Json | null
@@ -160,15 +195,99 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          departure_date: string
+          destination: string
+          estimated_budget: number
+          id: string
+          notes: string | null
+          purpose: string
+          rejection_reason: string | null
+          return_date: string
+          status: Database["public"]["Enums"]["request_status"]
+          trip_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          departure_date: string
+          destination: string
+          estimated_budget: number
+          id?: string
+          notes?: string | null
+          purpose: string
+          rejection_reason?: string | null
+          return_date: string
+          status?: Database["public"]["Enums"]["request_status"]
+          trip_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          departure_date?: string
+          destination?: string
+          estimated_budget?: number
+          id?: string
+          notes?: string | null
+          purpose?: string
+          rejection_reason?: string | null
+          return_date?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          trip_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_approver: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "manager" | "employee"
       loyalty_tier: "bronze" | "silver" | "gold" | "platinum"
+      request_status: "pending" | "approved" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -296,7 +415,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "manager", "employee"],
       loyalty_tier: ["bronze", "silver", "gold", "platinum"],
+      request_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },
 } as const

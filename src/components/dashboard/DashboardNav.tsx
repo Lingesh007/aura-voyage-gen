@@ -38,11 +38,12 @@ const DashboardNav = ({ userName, userType, onOpenAgent }: DashboardNavProps) =>
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
         { icon: Briefcase, label: "Trips", path: "/dashboard?tab=trips" },
         { icon: Users, label: "Teams", path: "/dashboard?tab=teams" },
-        { icon: CheckSquare, label: "Approvals", path: "/dashboard?tab=approvals" },
+        { icon: CheckSquare, label: "Approvals", path: "/approvals" },
       ]
     : [
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
         { icon: Briefcase, label: "My Trips", path: "/dashboard?tab=trips" },
+        { icon: CheckSquare, label: "Approvals", path: "/approvals" },
         { icon: User, label: "Profile", path: "/profile" },
       ];
 
