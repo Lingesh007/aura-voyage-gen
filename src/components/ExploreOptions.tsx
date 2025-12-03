@@ -1,8 +1,17 @@
-import { useNavigate } from "react-router-dom";
-import { Plane, Hotel, FileText, MapPin, Sparkles, Bot } from "lucide-react";
+import { useState } from "react";
+import { Plane, Hotel, FileText, MapPin, Sparkles, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TileSearch } from "@/components/TileSearch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import cityImage from "@/assets/destination-city.jpg";
 import mountainImage from "@/assets/destination-mountain.jpg";
 import culturalImage from "@/assets/destination-cultural.jpg";
@@ -14,6 +23,10 @@ interface ExploreOptionsProps {
 
 const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState("");
 
   const options = [
     {
@@ -23,6 +36,7 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
       badge: "Smart Bundles",
       image: cityImage,
       path: "/booking/flights",
+      prompt: "Show me the best flight deals available right now. Include top destinations with prices, best airlines, and any special offers. Focus on popular routes and budget-friendly options.",
     },
     {
       icon: Hotel,
@@ -31,6 +45,7 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
       badge: "Price Match",
       image: mountainImage,
       path: "/booking/hotels",
+      prompt: "Show me trending hotel deals and recommendations. Include luxury hotels, boutique stays, and budget-friendly options across popular destinations. Mention current discounts and special packages.",
     },
     {
       icon: FileText,
@@ -39,6 +54,7 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
       badge: "24hr Service",
       image: culturalImage,
       path: "/booking/visas",
+      prompt: "Provide visa requirements and processing information for top travel destinations. Include visa-free countries, e-visa options, and countries with easy visa processes. Mention processing times and required documents.",
     },
     {
       icon: MapPin,
@@ -47,8 +63,52 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
       badge: "Local Experts",
       image: beachImage,
       path: "/booking/activities",
+      prompt: "Recommend top activities and experiences for travelers. Include adventure activities, cultural tours, food experiences, and unique local experiences across popular destinations. Mention prices and booking tips.",
     },
   ];
+
+  const handleTileClick = async (category: string, prompt: string) => {
+    setSelectedCategory(category);
+    setLoading(true);
+    setAiResponse("");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || "there";
+
+      const { data, error } = await supabase.functions.invoke("travax-chat", {
+        body: {
+          messages: [{ role: "user", content: prompt }],
+          userName,
+        },
+      });
+
+      if (error) throw error;
+      setAiResponse(data.message);
+    } catch (error: any) {
+      console.error("AI fetch error:", error);
+      toast({
+        title: "Failed to load recommendations",
+        description: "Please try again or use the search bar.",
+        variant: "destructive",
+      });
+      setSelectedCategory(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBook = () => {
+    if (!selectedCategory) return;
+    const categoryMap: Record<string, string> = {
+      Flights: "flights",
+      Hotels: "hotels",
+      Visas: "visas",
+      Activities: "activities",
+    };
+    const bookingType = categoryMap[selectedCategory] || "flights";
+    navigate(`/booking/${bookingType}?fromAgent=true&details=${encodeURIComponent(aiResponse)}`);
+  };
 
   return (
     <div>
@@ -57,7 +117,7 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
           <h2 className="text-2xl font-bold text-foreground">
             Explore & Book
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">AI-powered booking with smart recommendations</p>
+          <p className="text-sm text-muted-foreground mt-1">Click any tile for AI-powered recommendations</p>
         </div>
         <Button variant="outline" onClick={onOpenAgent} className="gap-2">
           <Bot className="w-4 h-4" />
@@ -69,7 +129,8 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
         {options.map((option, index) => (
           <div key={index} className="space-y-3">
             <div
-              className="group relative h-72 rounded-2xl overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-lg"
+              onClick={() => handleTileClick(option.title, option.prompt)}
+              className="group relative h-72 rounded-2xl overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-lg cursor-pointer"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Background Image with reduced saturation */}
@@ -103,16 +164,13 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
               </Button>
               
               {/* Content */}
-              <button
-                onClick={() => navigate(option.path)}
-                className="absolute inset-0 p-6 flex flex-col justify-end text-left w-full"
-              >
+              <div className="absolute inset-0 p-6 flex flex-col justify-end text-left w-full">
                 <option.icon className="w-8 h-8 text-primary mb-2" strokeWidth={1.5} />
                 <h3 className="text-xl font-bold text-foreground mb-1">
                   {option.title}
                 </h3>
                 <p className="text-sm text-muted-foreground">{option.description}</p>
-              </button>
+              </div>
             </div>
             
             {/* Search Bar Under Each Tile */}
@@ -123,6 +181,45 @@ const ExploreOptions = ({ onOpenAgent }: ExploreOptionsProps) => {
           </div>
         ))}
       </div>
+
+      {/* AI Response Dialog */}
+      <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              {selectedCategory} Recommendations
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Getting AI recommendations...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <p className="whitespace-pre-wrap leading-relaxed">{aiResponse}</p>
+              </div>
+              
+              {aiResponse && (
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button onClick={handleBook} className="flex-1">
+                    Book {selectedCategory}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
