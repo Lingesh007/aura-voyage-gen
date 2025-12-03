@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plane, LogOut, User, Wallet, MapPin, Calendar, Award, TrendingUp, Globe, Gift } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Clock, Sparkles, Bot, ArrowRight } from "lucide-react";
 import ExploreOptions from "@/components/ExploreOptions";
-import { GlobalSearch } from "@/components/GlobalSearch";
-import { DashboardSearch } from "@/components/DashboardSearch";
 import { BookingHistory } from "@/components/BookingHistory";
-import heroImage from "@/assets/destination-beach.jpg";
+import DashboardNav from "@/components/dashboard/DashboardNav";
+import HeroSection from "@/components/dashboard/HeroSection";
+import QuickActions from "@/components/dashboard/QuickActions";
+import AISearchBar from "@/components/dashboard/AISearchBar";
 
 interface IndividualDashboardProps {
   onOpenAgent: () => void;
@@ -18,246 +18,223 @@ interface IndividualDashboardProps {
 const IndividualDashboard = ({ onOpenAgent, user }: IndividualDashboardProps) => {
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Travel Enthusiast";
 
   const userData = {
-    name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Travel Enthusiast",
     upcomingTrips: [
-      { destination: "Bali, Indonesia", date: "Feb 15-22, 2024", type: "Leisure", status: "Confirmed" },
-      { destination: "Paris, France", date: "Mar 10-17, 2024", type: "City Break", status: "Pending" }
+      { 
+        destination: "Bali, Indonesia", 
+        date: "Feb 15-22, 2024", 
+        type: "Leisure", 
+        status: "Confirmed",
+        daysUntil: 10,
+        budget: "$2,400",
+        budgetUsed: "$1,800"
+      },
+      { 
+        destination: "Paris, France", 
+        date: "Mar 10-17, 2024", 
+        type: "City Break", 
+        status: "Pending",
+        daysUntil: 34,
+        budget: "$3,200",
+        budgetUsed: "$0"
+      }
     ],
     recentSearches: [
-      { destination: "Tokyo, Japan", date: "Apr 2024" },
-      { destination: "Santorini, Greece", date: "May 2024" },
-      { destination: "New York, USA", date: "Jun 2024" }
+      { destination: "Tokyo, Japan", date: "Apr 2024", image: "🗼", price: "$1,200" },
+      { destination: "Santorini, Greece", date: "May 2024", image: "🏛️", price: "$1,800" },
+      { destination: "New York, USA", date: "Jun 2024", image: "🗽", price: "$950" }
     ],
-    trendingDestinations: [
-      { name: "Maldives", discount: "30% off", season: "Peak Season" },
-      { name: "Swiss Alps", discount: "25% off", season: "Winter Special" },
-      { name: "Dubai", discount: "20% off", season: "Shopping Festival" }
+    recommendedTrips: [
+      { destination: "Dubai", discount: "20% off", reason: "Based on your searches", price: "$1,450" },
+      { destination: "Maldives", discount: "30% off", reason: "Peak season special", price: "$2,100" },
+      { destination: "Swiss Alps", discount: "25% off", reason: "Winter getaway", price: "$1,800" }
     ],
-    layoverPrograms: [
-      { airport: "Singapore Changi", program: "Free City Tour", duration: "6+ hours" },
-      { airport: "Dubai International", program: "Hotel Voucher", duration: "8+ hours" },
-      { airport: "Doha Hamad", program: "Transit Hotel", duration: "4+ hours" }
-    ],
-    airlineOffers: [
-      { airline: "Emirates", offer: "Business Class Upgrade", points: "50K miles" },
-      { airline: "Singapore Airlines", offer: "Free Lounge Access", validity: "All flights" },
-      { airline: "Qatar Airways", offer: "Extra Baggage", validity: "Valid 3 months" }
+    aiInsights: [
+      "Flight prices to Tokyo dropped 12% today",
+      "Best time to book Bali: 3 weeks before departure",
+      "You could save $340 by flying on Tuesday instead"
     ]
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <Plane className="w-6 h-6 md:w-8 md:h-8 text-primary" strokeWidth={1.5} />
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-primary">
-                Travax
-              </h1>
-              <p className="text-xs text-muted-foreground hidden md:block">Welcome, {userData.name.split(' ')[0]}</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <DashboardNav 
+        userName={userName} 
+        userType="individual" 
+        onOpenAgent={onOpenAgent} 
+      />
 
-          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-            <GlobalSearch />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/profile")}
-              className="hidden md:flex"
-            >
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/budget-tracker")}
-              className="hidden md:flex"
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Budget
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Sign Out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Banner */}
-      <div className="relative h-[200px] md:h-[300px] overflow-hidden">
-        <img 
-          src={heroImage} 
-          alt="Your next adventure awaits" 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center animate-fade-in px-4">
-            <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl mb-2">
-              Your Personal Travel Hub
-            </h2>
-            <p className="text-white/90 text-sm md:text-lg drop-shadow-lg">
-              Exclusive offers • Layover perks • Smart itineraries
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <HeroSection userType="individual" onOpenAgent={onOpenAgent} />
 
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Dashboard Search */}
-          <div className="animate-fade-in">
-            <DashboardSearch />
+          
+          {/* AI Search Bar */}
+          <div className="animate-fade-in -mt-16 relative z-20">
+            <AISearchBar 
+              onOpenAgent={onOpenAgent} 
+              placeholder="Ask Travax AI... 'Plan a romantic getaway under $2,000'"
+            />
           </div>
 
-          {/* Travel Perks Banner */}
-          <Card className="border bg-muted/30">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <Gift className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-xl font-bold">Layover</div>
-                  <div className="text-sm text-muted-foreground">Free Tours</div>
+          {/* Quick Actions */}
+          <section className="animate-fade-in">
+            <QuickActions userType="individual" onOpenAgent={onOpenAgent} />
+          </section>
+
+          {/* AI Insights Banner */}
+          <Card className="bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-primary" />
                 </div>
-                <div className="text-center">
-                  <Award className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-xl font-bold">Miles</div>
-                  <div className="text-sm text-muted-foreground">Rewards</div>
-                </div>
-                <div className="text-center">
-                  <TrendingUp className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-xl font-bold">30%</div>
-                  <div className="text-sm text-muted-foreground">Off Deals</div>
-                </div>
-                <div className="text-center">
-                  <Globe className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-xl font-bold">200+</div>
-                  <div className="text-sm text-muted-foreground">Countries</div>
-                </div>
+                <span className="font-semibold text-sm">AI Insights for You</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {userData.aiInsights.map((insight, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="bg-background/50 text-foreground font-normal"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1 text-primary" />
+                    {insight}
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
 
           {/* Upcoming Trips & Booking History */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <BookingHistory />
-            
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  Upcoming Trips
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Upcoming Trips
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/booking/flights")}>
+                    + New Trip
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {userData.upcomingTrips.map((trip, index) => (
-                  <div key={index} className="p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="font-semibold">{trip.destination}</div>
-                      <Badge variant={trip.status === "Confirmed" ? "default" : "secondary"}>
-                        {trip.status}
-                      </Badge>
+                {userData.upcomingTrips.length > 0 ? (
+                  userData.upcomingTrips.map((trip, index) => (
+                    <div 
+                      key={index} 
+                      className="p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/30 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="font-semibold text-lg">{trip.destination}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {trip.daysUntil} days to departure
+                          </div>
+                        </div>
+                        <Badge variant={trip.status === "Confirmed" ? "default" : "secondary"}>
+                          {trip.status}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{trip.date}</div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+                        <span className="text-xs text-muted-foreground">
+                          Budget: {trip.budgetUsed} / {trip.budget}
+                        </span>
+                        <Badge variant="outline" className="text-xs">{trip.type}</Badge>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">{trip.date}</div>
-                    <div className="text-sm text-primary mt-1">{trip.type}</div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Bot className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-2">No trips yet — want me to plan your first itinerary?</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Try: "Plan me a 5-day Japan trip under $2,000"
+                    </p>
+                    <Button onClick={onOpenAgent} className="gap-2">
+                      <Bot className="w-4 h-4" />
+                      Plan Your First Trip with AI
+                    </Button>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  Recent Searches
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {userData.recentSearches.map((search, index) => (
-                  <div key={index} className="p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors cursor-pointer">
-                    <div className="font-semibold">{search.destination}</div>
-                    <div className="text-sm text-muted-foreground">{search.date}</div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <BookingHistory />
           </div>
 
-          {/* Trending Destinations */}
+          {/* Recent Searches */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Trending Destinations
+                <MapPin className="w-5 h-5 text-primary" />
+                Recent Searches
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {userData.trendingDestinations.map((dest, index) => (
-                  <div key={index} className="p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-all hover:scale-105 cursor-pointer">
-                    <div className="font-semibold text-lg mb-2">{dest.name}</div>
-                    <Badge className="mb-2">{dest.discount}</Badge>
-                    <div className="text-sm text-muted-foreground">{dest.season}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Layover Programs */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="w-5 h-5 text-primary" />
-                Smart Layover Programs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {userData.layoverPrograms.map((program, index) => (
-                  <div key={index} className="p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
-                    <div className="font-semibold mb-1">{program.airport}</div>
-                    <div className="text-sm text-primary mb-1">{program.program}</div>
-                    <div className="text-xs text-muted-foreground">{program.duration} layover</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Airline Offers */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-primary" />
-                Exclusive Airline Offers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userData.airlineOffers.map((offer, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
-                    <div>
-                      <div className="font-semibold">{offer.airline}</div>
-                      <div className="text-sm text-primary">{offer.offer}</div>
+                {userData.recentSearches.map((search, index) => (
+                  <div 
+                    key={index} 
+                    className="p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/30 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-2xl">{search.image}</span>
+                      <div>
+                        <div className="font-semibold">{search.destination}</div>
+                        <div className="text-sm text-muted-foreground">{search.date}</div>
+                      </div>
                     </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      {offer.points || offer.validity}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+                      <span className="text-sm font-medium text-primary">{search.price}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={onOpenAgent}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Replan with AI
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recommended for You */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Recommended for You
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {userData.recommendedTrips.map((trip, index) => (
+                  <div 
+                    key={index} 
+                    className="p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/30 transition-all cursor-pointer relative overflow-hidden"
+                  >
+                    <Badge className="absolute top-2 right-2 bg-green-500/90">{trip.discount}</Badge>
+                    <div className="font-semibold text-lg mb-1">{trip.destination}</div>
+                    <div className="text-sm text-muted-foreground mb-3">{trip.reason}</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-primary">from {trip.price}</span>
+                      <Button variant="ghost" size="sm" onClick={onOpenAgent}>
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -266,9 +243,9 @@ const IndividualDashboard = ({ onOpenAgent, user }: IndividualDashboardProps) =>
           </Card>
 
           {/* Explore Options */}
-          <div className="animate-scale-in">
+          <section className="animate-scale-in">
             <ExploreOptions onOpenAgent={onOpenAgent} />
-          </div>
+          </section>
         </div>
       </main>
     </div>

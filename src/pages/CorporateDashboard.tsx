@@ -1,14 +1,25 @@
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Plane, LogOut, User, Wallet, Users, Clock, DollarSign, FileCheck, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  Plane, 
+  Users, 
+  Clock, 
+  FileCheck, 
+  Calendar,
+  Bot,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle
+} from "lucide-react";
 import ExploreOptions from "@/components/ExploreOptions";
-import { GlobalSearch } from "@/components/GlobalSearch";
-import { DashboardSearch } from "@/components/DashboardSearch";
 import { BookingHistory } from "@/components/BookingHistory";
-import heroImage from "@/assets/destination-beach.jpg";
+import DashboardNav from "@/components/dashboard/DashboardNav";
+import HeroSection from "@/components/dashboard/HeroSection";
+import QuickActions from "@/components/dashboard/QuickActions";
+import AISearchBar from "@/components/dashboard/AISearchBar";
+import CorporateMetrics from "@/components/dashboard/CorporateMetrics";
 
 interface CorporateDashboardProps {
   onOpenAgent: () => void;
@@ -18,228 +29,238 @@ interface CorporateDashboardProps {
 const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
   
   const companyData = {
     name: "TechCorp International",
-    employeesOnTrip: 12,
-    totalEmployees: 450,
+    metrics: {
+      monthlySpend: 124500,
+      spendChange: -18,
+      tripsMade: 14,
+      employeesTraveling: 7,
+      budgetUsed: 145000,
+      budgetTotal: 250000,
+      savingsThisMonth: 18400
+    },
     activeTrips: [
-      { employee: "Sarah Chen", destination: "Tokyo", purpose: "Client Meeting", departure: "2024-01-20", return: "2024-01-25" },
-      { employee: "Michael Ross", destination: "London", purpose: "Conference", departure: "2024-01-18", return: "2024-01-22" },
-      { employee: "Emily Watson", destination: "Dubai", purpose: "Partnership", departure: "2024-01-22", return: "2024-01-28" }
+      { 
+        employee: "Sarah Chen", 
+        destination: "Tokyo", 
+        purpose: "Client Meeting",
+        team: "Sales",
+        departure: "Jan 20, 2024", 
+        return: "Jan 25, 2024",
+        daysUntil: 5,
+        status: "Approved"
+      },
+      { 
+        employee: "Michael Ross", 
+        destination: "London", 
+        purpose: "Conference",
+        team: "Engineering",
+        departure: "Jan 18, 2024", 
+        return: "Jan 22, 2024",
+        daysUntil: 3,
+        status: "In Transit"
+      },
+      { 
+        employee: "Emily Watson", 
+        destination: "Dubai", 
+        purpose: "Partnership",
+        team: "Business Dev",
+        departure: "Jan 22, 2024", 
+        return: "Jan 28, 2024",
+        daysUntil: 7,
+        status: "Pending Approval"
+      }
     ],
-    budgetSpent: 145000,
-    budgetTotal: 250000,
-    visasPending: 3,
-    visasApproved: 9,
-    upcomingBookings: 8,
-    avgTripDuration: 6
+    pendingApprovals: [
+      { employee: "John Smith", request: "Dubai Business Trip", cost: "$2,400", urgency: "High" },
+      { employee: "Lisa Wang", request: "Singapore Conference", cost: "$1,800", urgency: "Medium" }
+    ],
+    aiInsights: [
+      "3 trips awaiting approval",
+      "Saved $18,400 this month via smart routing",
+      "Peak travel week: Jan 22-26"
+    ]
   };
 
-  const budgetPercentage = (companyData.budgetSpent / companyData.budgetTotal) * 100;
-
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <Plane className="w-6 h-6 md:w-8 md:h-8 text-primary" strokeWidth={1.5} />
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-primary">
-                Travax
-              </h1>
-              <p className="text-xs text-muted-foreground hidden md:block">Welcome, {userName.split(' ')[0]}</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <DashboardNav 
+        userName={userName} 
+        userType="corporate" 
+        onOpenAgent={onOpenAgent} 
+      />
 
-          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-            <GlobalSearch />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/profile")}
-              className="hidden md:flex"
-            >
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/budget-tracker")}
-              className="hidden md:flex"
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Budget
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Sign Out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Banner */}
-      <div className="relative h-[200px] md:h-[300px] overflow-hidden">
-        <img 
-          src={heroImage} 
-          alt="Corporate travel excellence" 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center animate-fade-in px-4">
-            <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl mb-2">
-              Corporate Travel Command Center
-            </h2>
-            <p className="text-white/90 text-sm md:text-lg drop-shadow-lg">
-              Enterprise discounts • Priority support • Streamlined approvals
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Hero Section */}
+      <HeroSection userType="corporate" onOpenAgent={onOpenAgent} />
 
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Dashboard Search */}
-          <div className="animate-fade-in">
-            <DashboardSearch />
+          
+          {/* AI Search Bar */}
+          <div className="animate-fade-in -mt-16 relative z-20">
+            <AISearchBar 
+              onOpenAgent={onOpenAgent} 
+              placeholder="Ask Travax AI... 'Book team retreat for 10 people in Bali under $25,000'"
+            />
           </div>
 
-          {/* Corporate Benefits Banner */}
-          <Card className="border bg-muted/30">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <TrendingUp className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold">25%</div>
-                  <div className="text-sm text-muted-foreground">Avg. Discount</div>
+          {/* Quick Actions */}
+          <section className="animate-fade-in">
+            <QuickActions userType="corporate" onOpenAgent={onOpenAgent} />
+          </section>
+
+          {/* Corporate Metrics */}
+          <section>
+            <CorporateMetrics data={companyData.metrics} />
+          </section>
+
+          {/* AI Insights Banner */}
+          <Card className="bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border-primary/20">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-primary" />
                 </div>
-                <div className="text-center">
-                  <Clock className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold">24/7</div>
-                  <div className="text-sm text-muted-foreground">Support</div>
-                </div>
-                <div className="text-center">
-                  <FileCheck className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold">Fast</div>
-                  <div className="text-sm text-muted-foreground">Approvals</div>
-                </div>
-                <div className="text-center">
-                  <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold">Free</div>
-                  <div className="text-sm text-muted-foreground">Forex</div>
-                </div>
+                <span className="font-semibold text-sm">AI Insights for {companyData.name}</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Key Metrics & Booking History */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
-                  Employees Traveling
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{companyData.employeesOnTrip}</div>
-                <p className="text-sm text-muted-foreground">of {companyData.totalEmployees} total</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" />
-                  Avg. Trip Duration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{companyData.avgTripDuration} days</div>
-                <p className="text-sm text-muted-foreground">{companyData.upcomingBookings} upcoming bookings</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-primary" />
-                  Budget Utilized
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">${(companyData.budgetSpent / 1000).toFixed(0)}K</div>
-                <Progress value={budgetPercentage} className="mt-2" />
-                <p className="text-sm text-muted-foreground mt-1">{budgetPercentage.toFixed(0)}% of ${(companyData.budgetTotal / 1000).toFixed(0)}K</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <FileCheck className="w-4 h-4 text-primary" />
-                  Visa Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{companyData.visasApproved}</div>
-                <p className="text-sm text-muted-foreground">{companyData.visasPending} pending approval</p>
-              </CardContent>
-            </Card>
-              </div>
-            </div>
-            
-            <div className="lg:col-span-1">
-              <BookingHistory />
-            </div>
-          </div>
-
-          {/* Active Trips */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plane className="w-5 h-5 text-primary" />
-                Active Business Trips
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {companyData.activeTrips.map((trip, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
-                    <div className="flex-1">
-                      <div className="font-semibold">{trip.employee}</div>
-                      <div className="text-sm text-muted-foreground">{trip.destination} • {trip.purpose}</div>
-                    </div>
-                    <div className="text-right text-sm">
-                      <div className="font-medium">{trip.departure}</div>
-                      <div className="text-muted-foreground">Return: {trip.return}</div>
-                    </div>
-                  </div>
+              <div className="flex flex-wrap gap-2">
+                {companyData.aiInsights.map((insight, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="bg-background/50 text-foreground font-normal"
+                  >
+                    {insight}
+                  </Badge>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Explore Options */}
-          <div className="animate-scale-in">
-            <ExploreOptions onOpenAgent={onOpenAgent} />
+          {/* Active Trips & Pending Approvals */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Active Trips */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Plane className="w-5 h-5 text-primary" />
+                    Active Business Trips
+                  </span>
+                  <Badge variant="outline">{companyData.activeTrips.length} active</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {companyData.activeTrips.map((trip, index) => (
+                  <div 
+                    key={index} 
+                    className="p-4 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/30 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">{trip.employee}</div>
+                          <div className="text-sm text-muted-foreground">{trip.team} Team</div>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={
+                          trip.status === "Approved" ? "default" : 
+                          trip.status === "In Transit" ? "secondary" : "outline"
+                        }
+                      >
+                        {trip.status}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Destination</div>
+                        <div className="font-medium">{trip.destination}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Purpose</div>
+                        <div className="font-medium">{trip.purpose}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Departure</div>
+                        <div className="font-medium">{trip.departure}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Return</div>
+                        <div className="font-medium">{trip.return}</div>
+                      </div>
+                    </div>
+                    {trip.daysUntil <= 7 && (
+                      <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30 text-sm text-primary">
+                        <Clock className="w-3 h-3" />
+                        {trip.daysUntil} days until departure
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Pending Approvals */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-primary" />
+                  Pending Approvals
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {companyData.pendingApprovals.map((approval, index) => (
+                  <div 
+                    key={index} 
+                    className="p-4 rounded-xl border border-border/50 hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="font-semibold text-sm">{approval.employee}</div>
+                      <Badge 
+                        variant={approval.urgency === "High" ? "destructive" : "secondary"}
+                        className="text-xs"
+                      >
+                        {approval.urgency}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-3">{approval.request}</div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-primary">{approval.cost}</span>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive">
+                          <AlertCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard?tab=approvals")}>
+                  View All Approvals
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Booking History */}
+          <BookingHistory />
+
+          {/* Explore Options */}
+          <section className="animate-scale-in">
+            <ExploreOptions onOpenAgent={onOpenAgent} />
+          </section>
         </div>
       </main>
     </div>
