@@ -22,6 +22,68 @@ export interface SearchHistoryItem {
 }
 
 export class SearchService {
+  // Common city names to IATA airport codes mapping
+  private static cityToIATA: Record<string, string> = {
+    'chennai': 'MAA',
+    'tokyo': 'NRT',
+    'paris': 'CDG',
+    'london': 'LHR',
+    'dubai': 'DXB',
+    'singapore': 'SIN',
+    'mumbai': 'BOM',
+    'delhi': 'DEL',
+    'bangalore': 'BLR',
+    'hyderabad': 'HYD',
+    'kolkata': 'CCU',
+    'new york': 'JFK',
+    'newyork': 'JFK',
+    'los angeles': 'LAX',
+    'losangeles': 'LAX',
+    'san francisco': 'SFO',
+    'sanfrancisco': 'SFO',
+    'chicago': 'ORD',
+    'miami': 'MIA',
+    'hong kong': 'HKG',
+    'hongkong': 'HKG',
+    'bangkok': 'BKK',
+    'kuala lumpur': 'KUL',
+    'sydney': 'SYD',
+    'melbourne': 'MEL',
+    'amsterdam': 'AMS',
+    'frankfurt': 'FRA',
+    'berlin': 'BER',
+    'rome': 'FCO',
+    'milan': 'MXP',
+    'madrid': 'MAD',
+    'barcelona': 'BCN',
+    'toronto': 'YYZ',
+    'vancouver': 'YVR',
+    'seoul': 'ICN',
+    'beijing': 'PEK',
+    'shanghai': 'PVG',
+    'doha': 'DOH',
+    'abu dhabi': 'AUH',
+    'abudhabi': 'AUH',
+    'cairo': 'CAI',
+    'istanbul': 'IST',
+    'maldives': 'MLE',
+    'bali': 'DPS',
+    'phuket': 'HKT',
+    'goa': 'GOI',
+    'cochin': 'COK',
+    'kochi': 'COK',
+  };
+
+  private static getIATACode(cityOrCode: string): string | null {
+    const normalized = cityOrCode.toLowerCase().trim();
+    // Check if it's already a valid 3-letter code
+    if (/^[A-Z]{3}$/i.test(cityOrCode)) {
+      return cityOrCode.toUpperCase();
+    }
+    // Look up in our mapping
+    return this.cityToIATA[normalized] || null;
+  }
+
   private static internalContent = [
     { title: 'Book Flights', description: 'Search and book flights to destinations worldwide', url: '/booking/flights', category: 'booking' },
     { title: 'Book Hotels', description: 'Find and reserve hotels at your destination', url: '/booking/hotels', category: 'booking' },
@@ -117,17 +179,28 @@ export class SearchService {
   }
 
   static async searchFlights(query: string): Promise<SearchResult[]> {
-    // Extract flight search parameters from query
-    const flightPattern = /flight.*from\s+(\w+).*to\s+(\w+)/i;
+    // Extract flight search parameters from query - support multi-word city names
+    const flightPattern = /flight.*from\s+([\w\s]+?)\s+to\s+([\w\s]+?)(?:\s+on|\s+for|\s*$)/i;
     const match = query.match(flightPattern);
     
     if (!match) return [];
 
+    const originCity = match[1].trim();
+    const destCity = match[2].trim();
+    
+    const originCode = this.getIATACode(originCity);
+    const destCode = this.getIATACode(destCity);
+    
+    if (!originCode || !destCode) {
+      console.log(`Could not find IATA codes for: ${originCity} (${originCode}) -> ${destCity} (${destCode})`);
+      return [];
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('flight-search', {
         body: {
-          origin: match[1].toUpperCase().substring(0, 3),
-          destination: match[2].toUpperCase().substring(0, 3),
+          origin: originCode,
+          destination: destCode,
           departureDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           adults: 1,
         },
