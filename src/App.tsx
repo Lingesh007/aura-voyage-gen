@@ -14,7 +14,7 @@ import BudgetTracker from "./pages/BudgetTracker";
 import NotFound from "./pages/NotFound";
 import TravaxAgent from "./components/TravaxAgent";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -38,14 +38,18 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           
-          {/* Global AI Assistant Button */}
-          <Button
-            onClick={() => setShowAgent(true)}
-            className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-2xl bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 p-0 animate-pulse"
-            aria-label="Open Travax AI Assistant"
-          >
-            <Sparkles className="w-6 h-6 text-primary-foreground" />
-          </Button>
+          {/* Global AI Assistant Button - Enhanced with glow */}
+          <div className="fixed bottom-6 right-6 z-40">
+            <div className="absolute inset-0 rounded-full bg-primary/40 blur-xl animate-pulse" />
+            <Button
+              onClick={() => setShowAgent(true)}
+              className="relative w-auto h-14 px-5 rounded-full shadow-2xl bg-primary hover:bg-primary/90 gap-2"
+              aria-label="Open Travax AI Assistant"
+            >
+              <Bot className="w-5 h-5 text-primary-foreground" />
+              <span className="text-primary-foreground font-medium">AI</span>
+            </Button>
+          </div>
 
           {/* Global TravaxAgent Modal */}
           {showAgent && <TravaxAgent onClose={() => setShowAgent(false)} />}
