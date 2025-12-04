@@ -36,13 +36,13 @@ const DashboardNav = ({ userName, userType, onOpenAgent }: DashboardNavProps) =>
   const navItems = userType === 'corporate' 
     ? [
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-        { icon: Briefcase, label: "Trips", path: "/dashboard?tab=trips" },
+        { icon: Briefcase, label: "Trips", path: "/trips" },
         { icon: Users, label: "Teams", path: "/dashboard?tab=teams" },
         { icon: CheckSquare, label: "Approvals", path: "/approvals" },
       ]
     : [
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-        { icon: Briefcase, label: "My Trips", path: "/dashboard?tab=trips" },
+        { icon: Briefcase, label: "My Trips", path: "/trips" },
         { icon: CheckSquare, label: "Approvals", path: "/approvals" },
         { icon: User, label: "Profile", path: "/profile" },
       ];

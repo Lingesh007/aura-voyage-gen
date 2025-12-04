@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Bot, ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-corporate.jpg";
+import heroCorporate from "@/assets/hero-corporate.jpg";
+import heroIndividual from "@/assets/destination-beach.jpg";
 
 interface HeroSectionProps {
   userType: 'corporate' | 'individual';
@@ -8,6 +9,8 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ userType, onOpenAgent }: HeroSectionProps) => {
+  const heroImage = userType === 'corporate' ? heroCorporate : heroIndividual;
+  
   const content = userType === 'corporate' 
     ? {
         headline: "Travax — AI Travel Planning for Teams",

@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -101,10 +100,6 @@ const getEmailContent = (type: string, details: NotificationRequest['requestDeta
               </div>
               
               <p style="color: #4b5563;">You can now proceed with booking your flights and accommodations through Travax.</p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="#" style="background: #6366f1; color: white; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: 600;">Start Booking</a>
-              </div>
             </div>
             <div style="background: #f3f4f6; padding: 20px; text-align: center;">
               <p style="color: #6b7280; margin: 0; font-size: 14px;">Powered by Travax AI Travel Planning</p>
@@ -161,16 +156,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { subject, html } = getEmailContent(type, requestDetails, recipientName);
 
-    const emailResponse = await resend.emails.send({
-      from: "Travax <onboarding@resend.dev>",
-      to: [recipientEmail],
-      subject,
-      html,
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Travax <onboarding@resend.dev>",
+        to: [recipientEmail],
+        subject,
+        html,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("Resend API error:", error);
+      throw new Error(`Resend API error: ${error}`);
+    }
 
-    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
+    const data = await res.json();
+    console.log("Email sent successfully:", data);
+
+    return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

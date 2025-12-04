@@ -99,6 +99,34 @@ export const ApprovalsList = ({ isApprover = false, showOnlyPending = false }: A
         comment: "Request approved",
       });
 
+      // Send email notification
+      try {
+        // Get requester's email (we'll use the user_id to fetch)
+        const { data: userData } = await supabase.auth.admin.getUserById(request.user_id);
+        const requesterEmail = userData?.user?.email;
+        const requesterName = userData?.user?.user_metadata?.full_name || requesterEmail?.split('@')[0] || 'Traveler';
+        
+        if (requesterEmail) {
+          await supabase.functions.invoke('travel-notifications', {
+            body: {
+              type: 'approved',
+              recipientEmail: requesterEmail,
+              recipientName: requesterName,
+              requestDetails: {
+                destination: request.destination,
+                departureDate: request.departure_date,
+                returnDate: request.return_date,
+                purpose: request.purpose,
+                estimatedBudget: request.estimated_budget,
+                approverName: user.user_metadata?.full_name || user.email?.split('@')[0]
+              }
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+      }
+
       toast({
         title: "Request Approved",
         description: `Travel to ${request.destination} has been approved.`,
@@ -141,6 +169,33 @@ export const ApprovalsList = ({ isApprover = false, showOnlyPending = false }: A
         action: "rejected",
         comment: rejectReason || "No reason provided",
       });
+
+      // Send email notification
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(selectedRequest.user_id);
+        const requesterEmail = userData?.user?.email;
+        const requesterName = userData?.user?.user_metadata?.full_name || requesterEmail?.split('@')[0] || 'Traveler';
+        
+        if (requesterEmail) {
+          await supabase.functions.invoke('travel-notifications', {
+            body: {
+              type: 'rejected',
+              recipientEmail: requesterEmail,
+              recipientName: requesterName,
+              requestDetails: {
+                destination: selectedRequest.destination,
+                departureDate: selectedRequest.departure_date,
+                returnDate: selectedRequest.return_date,
+                purpose: selectedRequest.purpose,
+                estimatedBudget: selectedRequest.estimated_budget,
+                rejectionReason: rejectReason || "No reason provided"
+              }
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+      }
 
       toast({
         title: "Request Rejected",
