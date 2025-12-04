@@ -75,6 +75,27 @@ export const TravelRequestForm = ({ onSuccess }: TravelRequestFormProps) => {
 
       if (error) throw error;
 
+      // Send email notification
+      try {
+        await supabase.functions.invoke('travel-notifications', {
+          body: {
+            type: 'submitted',
+            recipientEmail: user.email,
+            recipientName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Traveler',
+            requestDetails: {
+              destination,
+              departureDate: format(departureDate, "yyyy-MM-dd"),
+              returnDate: format(returnDate, "yyyy-MM-dd"),
+              purpose,
+              estimatedBudget: parseFloat(estimatedBudget)
+            }
+          }
+        });
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+        // Don't fail the request if email fails
+      }
+
       toast({
         title: "Request Submitted",
         description: "Your travel request has been sent for approval.",

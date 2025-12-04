@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import Trips from "./pages/Trips";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -37,6 +38,7 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/budget-tracker" element={<BudgetTracker />} />
             <Route path="/approvals" element={<Approvals />} />
+            <Route path="/trips" element={<Trips />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           

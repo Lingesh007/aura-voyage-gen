@@ -85,27 +85,39 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             date: "Dec 15, 2024",
             duration: "7h 30m",
             price: 1250,
-            class: "Business Class"
+            class: "Business Class",
+            flightCode: "BA178",
+            layover: "Direct",
+            pointsEarned: 2500,
+            airline: "British Airways"
           },
           {
             image: flightBusiness,
             destination: "Tokyo",
-            departure: "San Francisco",
-            arrival: "Tokyo Narita",
+            departure: "San Francisco SFO",
+            arrival: "Tokyo Narita NRT",
             date: "Dec 20, 2024",
             duration: "11h 45m",
             price: 1850,
-            class: "Business Class"
+            class: "Business Class",
+            flightCode: "JL001",
+            layover: "Direct",
+            pointsEarned: 3700,
+            airline: "Japan Airlines"
           },
           {
             image: flightLounge,
             destination: "Dubai",
-            departure: "Los Angeles",
-            arrival: "Dubai International",
+            departure: "Los Angeles LAX",
+            arrival: "Dubai DXB",
             date: "Dec 18, 2024",
             duration: "16h 20m",
             price: 2100,
-            class: "First Class"
+            class: "First Class",
+            flightCode: "EK216",
+            layover: "1 stop (London)",
+            pointsEarned: 4200,
+            airline: "Emirates"
           }
         ];
       case "hotels":
@@ -117,8 +129,13 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             rating: 5,
             location: "Near Eiffel Tower",
             date: "3 nights",
+            nights: 3,
+            checkIn: "Dec 15, 2024",
+            checkOut: "Dec 18, 2024",
             price: 850,
-            amenities: "Spa, Pool, Restaurant"
+            pricePerNight: 283,
+            amenities: "Spa, Pool, Restaurant",
+            totalCost: 850
           },
           {
             image: hotelDubai,
@@ -127,8 +144,13 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             rating: 5,
             location: "Marina District",
             date: "4 nights",
+            nights: 4,
+            checkIn: "Dec 18, 2024",
+            checkOut: "Dec 22, 2024",
             price: 1200,
-            amenities: "Beach, Spa, Fine Dining"
+            pricePerNight: 300,
+            amenities: "Beach, Spa, Fine Dining",
+            totalCost: 1200
           },
           {
             image: hotelTokyo,
@@ -137,8 +159,13 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             rating: 5,
             location: "Shibuya District",
             date: "5 nights",
+            nights: 5,
+            checkIn: "Dec 20, 2024",
+            checkOut: "Dec 25, 2024",
             price: 980,
-            amenities: "Zen Garden, Spa, Onsen"
+            pricePerNight: 196,
+            amenities: "Zen Garden, Spa, Onsen",
+            totalCost: 980
           }
         ];
       case "visas":
@@ -462,17 +489,41 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                           <div className="space-y-2 text-xs text-muted-foreground mb-4">
                             {type === "flights" && (
                               <>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div className="bg-muted/50 rounded p-2">
+                                    <span className="text-muted-foreground">Flight</span>
+                                    <div className="font-semibold text-foreground">{option.flightCode}</div>
+                                  </div>
+                                  <div className="bg-muted/50 rounded p-2">
+                                    <span className="text-muted-foreground">Layover</span>
+                                    <div className="font-semibold text-foreground">{option.layover}</div>
+                                  </div>
+                                </div>
                                 <div className="flex items-center gap-2">
                                   <Clock className="w-3 h-3" />
                                   {option.duration} • {option.class}
                                 </div>
-                                <div>{option.date}</div>
+                                <div className="flex items-center justify-between">
+                                  <span>{option.date}</span>
+                                  <span className="text-primary font-medium">+{option.pointsEarned} pts</span>
+                                </div>
                               </>
                             )}
                             {type === "hotels" && (
                               <>
-                                <div>{option.location} • {option.date}</div>
-                                <div>{option.amenities}</div>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div className="bg-muted/50 rounded p-2">
+                                    <span className="text-muted-foreground">Duration</span>
+                                    <div className="font-semibold text-foreground">{option.nights} nights</div>
+                                  </div>
+                                  <div className="bg-muted/50 rounded p-2">
+                                    <span className="text-muted-foreground">Per Night</span>
+                                    <div className="font-semibold text-foreground">${option.pricePerNight}</div>
+                                  </div>
+                                </div>
+                                <div>{option.checkIn} → {option.checkOut}</div>
+                                <div>{option.location}</div>
+                                <div className="text-xs">{option.amenities}</div>
                               </>
                             )}
                             {type === "visas" && (
