@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User } from "lucide-react";
+import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User, Calendar, PlaneTakeoff, PlaneLanding, Timer, Coins } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import hotelParis from "@/assets/hotel-paris.jpg";
 import hotelDubai from "@/assets/hotel-dubai.jpg";
 import hotelTokyo from "@/assets/hotel-tokyo.jpg";
@@ -82,12 +86,15 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             destination: "London",
             departure: "New York JFK",
             arrival: "London Heathrow",
+            departureTime: "08:30 AM",
+            arrivalTime: "08:00 PM",
             date: "Dec 15, 2024",
             duration: "7h 30m",
             price: 1250,
             class: "Business Class",
             flightCode: "BA178",
             layover: "Direct",
+            layoverDuration: null,
             pointsEarned: 2500,
             airline: "British Airways"
           },
@@ -96,12 +103,15 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             destination: "Tokyo",
             departure: "San Francisco SFO",
             arrival: "Tokyo Narita NRT",
+            departureTime: "11:00 AM",
+            arrivalTime: "04:45 PM (+1)",
             date: "Dec 20, 2024",
             duration: "11h 45m",
             price: 1850,
             class: "Business Class",
             flightCode: "JL001",
             layover: "Direct",
+            layoverDuration: null,
             pointsEarned: 3700,
             airline: "Japan Airlines"
           },
@@ -110,12 +120,15 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             destination: "Dubai",
             departure: "Los Angeles LAX",
             arrival: "Dubai DXB",
+            departureTime: "02:15 PM",
+            arrivalTime: "08:35 PM (+1)",
             date: "Dec 18, 2024",
             duration: "16h 20m",
             price: 2100,
             class: "First Class",
             flightCode: "EK216",
-            layover: "1 stop (London)",
+            layover: "1 stop (London LHR)",
+            layoverDuration: "2h 30m",
             pointsEarned: 4200,
             airline: "Emirates"
           }
@@ -489,41 +502,104 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                           <div className="space-y-2 text-xs text-muted-foreground mb-4">
                             {type === "flights" && (
                               <>
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                  <div className="bg-muted/50 rounded p-2">
-                                    <span className="text-muted-foreground">Flight</span>
+                                {/* Flight Route with Times */}
+                                <div className="bg-muted/50 rounded-lg p-3 mb-2">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="text-center">
+                                      <PlaneTakeoff className="w-4 h-4 mx-auto mb-1 text-primary" />
+                                      <div className="font-bold text-foreground text-sm">{option.departureTime}</div>
+                                      <div className="text-muted-foreground text-xs">{option.departure}</div>
+                                    </div>
+                                    <div className="flex-1 px-3">
+                                      <div className="relative flex items-center">
+                                        <div className="flex-1 border-t-2 border-dashed border-primary/40" />
+                                        <div className="px-2 text-center">
+                                          <Timer className="w-3 h-3 mx-auto text-primary" />
+                                          <div className="text-xs font-medium text-foreground">{option.duration}</div>
+                                        </div>
+                                        <div className="flex-1 border-t-2 border-dashed border-primary/40" />
+                                      </div>
+                                    </div>
+                                    <div className="text-center">
+                                      <PlaneLanding className="w-4 h-4 mx-auto mb-1 text-primary" />
+                                      <div className="font-bold text-foreground text-sm">{option.arrivalTime}</div>
+                                      <div className="text-muted-foreground text-xs">{option.arrival}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* Flight Details Grid */}
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                  <div className="bg-muted/50 rounded p-2 text-center">
+                                    <span className="text-muted-foreground block text-xs">Flight</span>
                                     <div className="font-semibold text-foreground">{option.flightCode}</div>
                                   </div>
-                                  <div className="bg-muted/50 rounded p-2">
-                                    <span className="text-muted-foreground">Layover</span>
-                                    <div className="font-semibold text-foreground">{option.layover}</div>
+                                  <div className="bg-muted/50 rounded p-2 text-center">
+                                    <span className="text-muted-foreground block text-xs">Layover</span>
+                                    <div className="font-semibold text-foreground text-xs">{option.layover}</div>
+                                    {option.layoverDuration && (
+                                      <div className="text-xs text-muted-foreground">({option.layoverDuration})</div>
+                                    )}
+                                  </div>
+                                  <div className="bg-muted/50 rounded p-2 text-center">
+                                    <span className="text-muted-foreground block text-xs">Class</span>
+                                    <div className="font-semibold text-foreground text-xs">{option.class}</div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-3 h-3" />
-                                  {option.duration} • {option.class}
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span>{option.date}</span>
-                                  <span className="text-primary font-medium">+{option.pointsEarned} pts</span>
+                                <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-3 h-3 text-primary" />
+                                    <span className="font-medium text-foreground">{option.date}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-primary font-semibold">
+                                    <Coins className="w-3 h-3" />
+                                    +{option.pointsEarned} pts
+                                  </div>
                                 </div>
                               </>
                             )}
                             {type === "hotels" && (
                               <>
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                  <div className="bg-muted/50 rounded p-2">
-                                    <span className="text-muted-foreground">Duration</span>
-                                    <div className="font-semibold text-foreground">{option.nights} nights</div>
-                                  </div>
-                                  <div className="bg-muted/50 rounded p-2">
-                                    <span className="text-muted-foreground">Per Night</span>
-                                    <div className="font-semibold text-foreground">${option.pricePerNight}</div>
+                                {/* Check-in/Check-out Display */}
+                                <div className="bg-muted/50 rounded-lg p-3 mb-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-center">
+                                      <Calendar className="w-4 h-4 mx-auto mb-1 text-primary" />
+                                      <div className="text-muted-foreground text-xs">Check-in</div>
+                                      <div className="font-bold text-foreground text-sm">{option.checkIn}</div>
+                                    </div>
+                                    <div className="flex-1 px-3">
+                                      <div className="relative flex items-center">
+                                        <div className="flex-1 border-t-2 border-dashed border-primary/40" />
+                                        <div className="px-2 text-center">
+                                          <Hotel className="w-4 h-4 mx-auto text-primary" />
+                                          <div className="text-xs font-medium text-foreground">{option.nights} nights</div>
+                                        </div>
+                                        <div className="flex-1 border-t-2 border-dashed border-primary/40" />
+                                      </div>
+                                    </div>
+                                    <div className="text-center">
+                                      <Calendar className="w-4 h-4 mx-auto mb-1 text-primary" />
+                                      <div className="text-muted-foreground text-xs">Check-out</div>
+                                      <div className="font-bold text-foreground text-sm">{option.checkOut}</div>
+                                    </div>
                                   </div>
                                 </div>
-                                <div>{option.checkIn} → {option.checkOut}</div>
-                                <div>{option.location}</div>
-                                <div className="text-xs">{option.amenities}</div>
+                                {/* Hotel Details Grid */}
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div className="bg-muted/50 rounded p-2 text-center">
+                                    <span className="text-muted-foreground block text-xs">Per Night</span>
+                                    <div className="font-semibold text-foreground">${option.pricePerNight}</div>
+                                  </div>
+                                  <div className="bg-muted/50 rounded p-2 text-center">
+                                    <span className="text-muted-foreground block text-xs">Total Cost</span>
+                                    <div className="font-semibold text-primary">${option.totalCost}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <MapPin className="w-3 h-3" />
+                                  {option.location}
+                                </div>
+                                <div className="text-xs bg-primary/10 rounded px-2 py-1">{option.amenities}</div>
                               </>
                             )}
                             {type === "visas" && (
