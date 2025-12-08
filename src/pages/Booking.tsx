@@ -38,12 +38,18 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     phone: ""
   });
 
-  // Flight date pickers
+  // Flight search inputs
+  const [departureCity, setDepartureCity] = useState("");
+  const [destinationCity, setDestinationCity] = useState("");
   const [departureDate, setDepartureDate] = useState<Date | undefined>(undefined);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [isRoundTrip, setIsRoundTrip] = useState(true);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // Hotel date pickers
+  // Hotel search inputs
+  const [hotelDestination, setHotelDestination] = useState("");
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
 
@@ -106,6 +112,81 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
       return differenceInDays(checkOutDate, checkInDate);
     }
     return 0;
+  };
+
+  // Search for flights
+  const handleFlightSearch = async () => {
+    if (!departureCity || !destinationCity || !departureDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter departure city, destination, and departure date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSearchLoading(true);
+    setHasSearched(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('flight-search', {
+        body: {
+          origin: departureCity.toUpperCase().slice(0, 3),
+          destination: destinationCity.toUpperCase().slice(0, 3),
+          departureDate: format(departureDate, 'yyyy-MM-dd'),
+          adults: passengers.adults
+        }
+      });
+
+      if (error) {
+        console.error('Flight search error:', error);
+        toast({
+          title: "Search Error",
+          description: "Unable to search flights. Please try again.",
+          variant: "destructive",
+        });
+        setSearchResults([]);
+      } else if (data?.data) {
+        const formattedResults = data.data.slice(0, 5).map((offer: any, index: number) => ({
+          image: [flightAirplane, flightBusiness, flightLounge][index % 3],
+          destination: destinationCity,
+          departure: departureCity,
+          arrival: destinationCity,
+          departureTime: offer.itineraries?.[0]?.segments?.[0]?.departure?.at?.split('T')[1]?.slice(0, 5) || "N/A",
+          arrivalTime: offer.itineraries?.[0]?.segments?.slice(-1)[0]?.arrival?.at?.split('T')[1]?.slice(0, 5) || "N/A",
+          date: format(departureDate, "MMM d, yyyy"),
+          duration: offer.itineraries?.[0]?.duration?.replace('PT', '').toLowerCase() || "N/A",
+          price: parseFloat(offer.price?.total || 0),
+          class: offer.travelerPricings?.[0]?.fareDetailsBySegment?.[0]?.cabin || "Economy",
+          flightCode: offer.itineraries?.[0]?.segments?.[0]?.carrierCode + offer.itineraries?.[0]?.segments?.[0]?.number || "N/A",
+          layover: offer.itineraries?.[0]?.segments?.length > 1 ? `${offer.itineraries[0].segments.length - 1} stop(s)` : "Direct",
+          airline: offer.itineraries?.[0]?.segments?.[0]?.carrierCode || "N/A",
+          pointsEarned: Math.round(parseFloat(offer.price?.total || 0) * 2)
+        }));
+        setSearchResults(formattedResults);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Search for hotels (mock for now)
+  const handleHotelSearch = () => {
+    if (!hotelDestination || !checkInDate || !checkOutDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter destination, check-in and check-out dates.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setHasSearched(true);
+    // Hotels use static options for now, but we mark that search was done
   };
 
   // Parse AI response details if coming from agent
@@ -318,7 +399,15 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     }
   };
 
-  const options = fromAgent ? parseAIOptions() : getStaticOptions();
+  // Determine which options to show
+  const getDisplayOptions = () => {
+    if (fromAgent) return parseAIOptions();
+    if (type === "flights" && searchResults.length > 0) return searchResults;
+    if (hasSearched && type === "flights" && searchResults.length === 0) return [];
+    return getStaticOptions();
+  };
+  
+  const options = getDisplayOptions();
 
   const getIcon = () => {
     switch (type) {
@@ -458,20 +547,50 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             {/* Flight Search Section */}
             {type === "flights" && (
               <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
-                <div className="flex items-center gap-2 mb-4">
-                  <Plane className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg">Flight Search</h3>
-                </div>
-                
-                <div className="flex items-center gap-3 mb-4">
-                  <Switch
-                    id="round-trip"
-                    checked={isRoundTrip}
-                    onCheckedChange={setIsRoundTrip}
-                  />
-                  <Label htmlFor="round-trip" className="cursor-pointer">Round Trip</Label>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Plane className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-lg">Flight Search</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id="round-trip"
+                      checked={isRoundTrip}
+                      onCheckedChange={setIsRoundTrip}
+                    />
+                    <Label htmlFor="round-trip" className="cursor-pointer text-sm">Round Trip</Label>
+                  </div>
                 </div>
 
+                {/* Departure and Destination Cities */}
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label>From (Departure City) *</Label>
+                    <div className="relative mt-1">
+                      <PlaneTakeoff className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="e.g., New York or JFK"
+                        value={departureCity}
+                        onChange={(e) => setDepartureCity(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>To (Destination City) *</Label>
+                    <div className="relative mt-1">
+                      <PlaneLanding className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="e.g., London or LHR"
+                        value={destinationCity}
+                        onChange={(e) => setDestinationCity(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Pickers */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label>Departure Date *</Label>
@@ -623,30 +742,47 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                   </div>
                 </div>
 
-                {departureDate && (
-                  <div className="mt-4 flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm">
-                      <PlaneTakeoff className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{format(departureDate, "EEE, MMM d, yyyy")}</span>
-                    </div>
-                    {isRoundTrip && returnDate && (
-                      <>
+                {/* Search Summary and Button */}
+                <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  {departureCity && destinationCity && departureDate && (
+                    <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg flex-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">{departureCity.toUpperCase()}</span>
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex items-center gap-2 text-sm">
-                          <PlaneLanding className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{format(returnDate, "EEE, MMM d, yyyy")}</span>
-                        </div>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {differenceInDays(returnDate, departureDate)} days
-                        </span>
+                        <span className="font-medium">{destinationCity.toUpperCase()}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-sm">{format(departureDate, "MMM d")}</span>
+                      {isRoundTrip && returnDate && (
+                        <>
+                          <span className="text-xs text-muted-foreground">-</span>
+                          <span className="text-sm">{format(returnDate, "MMM d")}</span>
+                        </>
+                      )}
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        {totalPassengers} {totalPassengers === 1 ? 'passenger' : 'passengers'}
+                      </span>
+                    </div>
+                  )}
+                  <Button 
+                    onClick={handleFlightSearch}
+                    disabled={searchLoading || !departureCity || !destinationCity || !departureDate}
+                    className="w-full sm:w-auto"
+                  >
+                    {searchLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <Plane className="w-4 h-4 mr-2" />
+                        Search Flights
                       </>
                     )}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground border-l border-border pl-3">
-                      <Users className="w-3 h-3" />
-                      {totalPassengers} {totalPassengers === 1 ? 'passenger' : 'passengers'}
-                    </div>
-                  </div>
-                )}
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -655,9 +791,24 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
               <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
                 <div className="flex items-center gap-2 mb-4">
                   <Hotel className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg">Stay Dates</h3>
+                  <h3 className="font-semibold text-lg">Hotel Search</h3>
                 </div>
 
+                {/* Destination Input */}
+                <div className="mb-4">
+                  <Label>Destination *</Label>
+                  <div className="relative mt-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="e.g., Paris, Dubai, Tokyo"
+                      value={hotelDestination}
+                      onChange={(e) => setHotelDestination(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Date Pickers */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label>Check-in Date *</Label>
@@ -819,32 +970,38 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                   </div>
                 </div>
 
-                {checkInDate && checkOutDate && (
-                  <div className="mt-4 flex items-center flex-wrap gap-3 p-3 bg-primary/10 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{format(checkInDate, "EEE, MMM d")}</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{format(checkOutDate, "EEE, MMM d")}</span>
-                    </div>
-                    <span className="text-sm font-semibold text-primary">
-                      {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
-                    </span>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground border-l border-border pl-3 ml-auto">
-                      <span className="flex items-center gap-1">
-                        <DoorOpen className="w-3 h-3" />
-                        {rooms} {rooms === 1 ? 'room' : 'rooms'}
+                {/* Search Summary and Button */}
+                <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  {hotelDestination && checkInDate && checkOutDate && (
+                    <div className="flex items-center flex-wrap gap-3 p-3 bg-primary/10 rounded-lg flex-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{hotelDestination}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span>{format(checkInDate, "MMM d")}</span>
+                        <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                        <span>{format(checkOutDate, "MMM d")}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-primary">
+                        ({calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'})
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {totalGuests} {totalGuests === 1 ? 'guest' : 'guests'}
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        {rooms} {rooms === 1 ? 'room' : 'rooms'}, {totalGuests} {totalGuests === 1 ? 'guest' : 'guests'}
                       </span>
                     </div>
-                  </div>
-                )}
+                  )}
+                  <Button 
+                    onClick={handleHotelSearch}
+                    disabled={!hotelDestination || !checkInDate || !checkOutDate}
+                    className="w-full sm:w-auto"
+                  >
+                    <Hotel className="w-4 h-4 mr-2" />
+                    Search Hotels
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -932,11 +1089,27 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
             {/* Booking Options */}
             <div className="space-y-6 mb-8">
               <h3 className="font-semibold text-lg">
-                {fromAgent ? "AI Recommended Options" : "Select Your Option"}
+                {fromAgent ? "AI Recommended Options" : searchResults.length > 0 ? "Search Results" : "Available Options"}
               </h3>
-              {options.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No options available. Try using the AI assistant for personalized recommendations.</p>
+              {searchLoading ? (
+                <div className="text-center py-12">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary mb-4" />
+                  <p className="text-muted-foreground">Searching for the best {type}...</p>
+                </div>
+              ) : options.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl border border-border">
+                  {hasSearched ? (
+                    <>
+                      <Plane className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p className="font-medium mb-2">No {type} found for your search</p>
+                      <p className="text-sm">Try adjusting your dates or destinations, or use the AI assistant for personalized recommendations.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium mb-2">Enter your search criteria above</p>
+                      <p className="text-sm">Fill in the details and click "Search {type === 'flights' ? 'Flights' : 'Hotels'}" to find available options.</p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="grid md:grid-cols-3 gap-6">
