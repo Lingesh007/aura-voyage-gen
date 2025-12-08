@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User, Calendar, PlaneTakeoff, PlaneLanding, Timer, Coins } from "lucide-react";
+import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User, Calendar, PlaneTakeoff, PlaneLanding, Timer, Coins, CalendarIcon, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, differenceInDays, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import hotelParis from "@/assets/hotel-paris.jpg";
 import hotelDubai from "@/assets/hotel-dubai.jpg";
 import hotelTokyo from "@/assets/hotel-tokyo.jpg";
@@ -35,6 +36,22 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     email: "",
     phone: ""
   });
+
+  // Flight date pickers
+  const [departureDate, setDepartureDate] = useState<Date | undefined>(undefined);
+  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
+  const [isRoundTrip, setIsRoundTrip] = useState(true);
+
+  // Hotel date pickers
+  const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
+  const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
+
+  const calculateNights = () => {
+    if (checkInDate && checkOutDate) {
+      return differenceInDays(checkOutDate, checkInDate);
+    }
+    return 0;
+  };
 
   // Parse AI response details if coming from agent
   const fromAgent = searchParams.get("fromAgent") === "true";
@@ -382,6 +399,197 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                 Find and book the best {type} for your business travel
               </p>
             </div>
+
+            {/* Flight Search Section */}
+            {type === "flights" && (
+              <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <Plane className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Flight Search</h3>
+                </div>
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <Switch
+                    id="round-trip"
+                    checked={isRoundTrip}
+                    onCheckedChange={setIsRoundTrip}
+                  />
+                  <Label htmlFor="round-trip" className="cursor-pointer">Round Trip</Label>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Departure Date *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !departureDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {departureDate ? format(departureDate, "PPP") : "Select departure date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={departureDate}
+                          onSelect={(date) => {
+                            setDepartureDate(date);
+                            if (date && returnDate && date > returnDate) {
+                              setReturnDate(addDays(date, 1));
+                            }
+                          }}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  {isRoundTrip && (
+                    <div>
+                      <Label>Return Date *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal mt-1",
+                              !returnDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {returnDate ? format(returnDate, "PPP") : "Select return date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={returnDate}
+                            onSelect={setReturnDate}
+                            disabled={(date) => date < (departureDate || new Date())}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+                </div>
+
+                {departureDate && (
+                  <div className="mt-4 flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm">
+                      <PlaneTakeoff className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{format(departureDate, "EEE, MMM d, yyyy")}</span>
+                    </div>
+                    {isRoundTrip && returnDate && (
+                      <>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 text-sm">
+                          <PlaneLanding className="w-4 h-4 text-primary" />
+                          <span className="font-medium">{format(returnDate, "EEE, MMM d, yyyy")}</span>
+                        </div>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {differenceInDays(returnDate, departureDate)} days
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Hotel Search Section */}
+            {type === "hotels" && (
+              <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <Hotel className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Stay Dates</h3>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Check-in Date *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !checkInDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {checkInDate ? format(checkInDate, "PPP") : "Select check-in date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={checkInDate}
+                          onSelect={(date) => {
+                            setCheckInDate(date);
+                            if (date && checkOutDate && date >= checkOutDate) {
+                              setCheckOutDate(addDays(date, 1));
+                            }
+                          }}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div>
+                    <Label>Check-out Date *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !checkOutDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {checkOutDate ? format(checkOutDate, "PPP") : "Select check-out date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={checkOutDate}
+                          onSelect={setCheckOutDate}
+                          disabled={(date) => date <= (checkInDate || new Date())}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {checkInDate && checkOutDate && (
+                  <div className="mt-4 flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{format(checkInDate, "EEE, MMM d")}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{format(checkOutDate, "EEE, MMM d")}</span>
+                    </div>
+                    <span className="ml-auto text-sm font-semibold text-primary">
+                      {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Traveler Details Form */}
             <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
