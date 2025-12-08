@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User, Calendar, PlaneTakeoff, PlaneLanding, Timer, Coins, CalendarIcon, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Plane, Hotel, FileText, MapPin, Star, Clock, User, Calendar, PlaneTakeoff, PlaneLanding, Timer, Coins, CalendarIcon, ArrowRight, Users, DoorOpen, RefreshCw, Minus, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -45,6 +46,60 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   // Hotel date pickers
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
+
+  // Passenger and room counts
+  const [passengers, setPassengers] = useState({ adults: 1, children: 0, infants: 0 });
+  const [rooms, setRooms] = useState(1);
+  const [guests, setGuests] = useState({ adults: 1, children: 0 });
+
+  // Currency conversion
+  const currencies = [
+    { code: 'USD', symbol: '$' },
+    { code: 'EUR', symbol: '€' },
+    { code: 'GBP', symbol: '£' },
+    { code: 'JPY', symbol: '¥' },
+    { code: 'AED', symbol: 'د.إ' },
+    { code: 'INR', symbol: '₹' },
+    { code: 'SGD', symbol: 'S$' },
+    { code: 'AUD', symbol: 'A$' },
+  ];
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+  const [loadingRates, setLoadingRates] = useState(false);
+
+  const fetchExchangeRates = async () => {
+    setLoadingRates(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('forex-rates', {
+        body: { base: 'USD' }
+      });
+      if (!error && data?.rates) {
+        setExchangeRates(data.rates);
+      }
+    } catch (error) {
+      console.error('Error fetching rates:', error);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExchangeRates();
+  }, []);
+
+  const convertPrice = (priceUSD: number): string => {
+    if (selectedCurrency === 'USD' || !exchangeRates[selectedCurrency]) {
+      return priceUSD.toFixed(2);
+    }
+    return (priceUSD * exchangeRates[selectedCurrency]).toFixed(2);
+  };
+
+  const getCurrencySymbol = () => {
+    return currencies.find(c => c.code === selectedCurrency)?.symbol || '$';
+  };
+
+  const totalPassengers = passengers.adults + passengers.children + passengers.infants;
+  const totalGuests = guests.adults + guests.children;
 
   const calculateNights = () => {
     if (checkInDate && checkOutDate) {
@@ -480,6 +535,94 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                   )}
                 </div>
 
+                {/* Passenger Count */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="w-4 h-4 text-primary" />
+                    <Label className="font-medium">Passengers</Label>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground mb-2">Adults (12+)</div>
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, adults: Math.max(1, p.adults - 1) }))}
+                          disabled={passengers.adults <= 1}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="font-semibold text-lg">{passengers.adults}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, adults: Math.min(9, p.adults + 1) }))}
+                          disabled={passengers.adults >= 9}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground mb-2">Children (2-11)</div>
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, children: Math.max(0, p.children - 1) }))}
+                          disabled={passengers.children <= 0}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="font-semibold text-lg">{passengers.children}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, children: Math.min(9, p.children + 1) }))}
+                          disabled={passengers.children >= 9}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground mb-2">Infants (0-2)</div>
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, infants: Math.max(0, p.infants - 1) }))}
+                          disabled={passengers.infants <= 0}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="font-semibold text-lg">{passengers.infants}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setPassengers(p => ({ ...p, infants: Math.min(passengers.adults, p.infants + 1) }))}
+                          disabled={passengers.infants >= passengers.adults}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {departureDate && (
                   <div className="mt-4 flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
                     <div className="flex items-center gap-2 text-sm">
@@ -498,6 +641,10 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                         </span>
                       </>
                     )}
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground border-l border-border pl-3">
+                      <Users className="w-3 h-3" />
+                      {totalPassengers} {totalPassengers === 1 ? 'passenger' : 'passengers'}
+                    </div>
                   </div>
                 )}
               </div>
@@ -572,8 +719,108 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                   </div>
                 </div>
 
+                {/* Room and Guest Count */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Rooms */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <DoorOpen className="w-4 h-4 text-primary" />
+                        <Label className="font-medium">Rooms</Label>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setRooms(r => Math.max(1, r - 1))}
+                            disabled={rooms <= 1}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="font-semibold text-xl">{rooms}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setRooms(r => Math.min(10, r + 1))}
+                            disabled={rooms >= 10}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guests */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Users className="w-4 h-4 text-primary" />
+                        <Label className="font-medium">Guests</Label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-muted/50 rounded-lg p-2">
+                          <div className="text-xs text-muted-foreground mb-1">Adults</div>
+                          <div className="flex items-center justify-between">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setGuests(g => ({ ...g, adults: Math.max(1, g.adults - 1) }))}
+                              disabled={guests.adults <= 1}
+                            >
+                              <Minus className="w-2 h-2" />
+                            </Button>
+                            <span className="font-semibold">{guests.adults}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setGuests(g => ({ ...g, adults: Math.min(rooms * 4, g.adults + 1) }))}
+                              disabled={guests.adults >= rooms * 4}
+                            >
+                              <Plus className="w-2 h-2" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="bg-muted/50 rounded-lg p-2">
+                          <div className="text-xs text-muted-foreground mb-1">Children</div>
+                          <div className="flex items-center justify-between">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setGuests(g => ({ ...g, children: Math.max(0, g.children - 1) }))}
+                              disabled={guests.children <= 0}
+                            >
+                              <Minus className="w-2 h-2" />
+                            </Button>
+                            <span className="font-semibold">{guests.children}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setGuests(g => ({ ...g, children: Math.min(rooms * 2, g.children + 1) }))}
+                              disabled={guests.children >= rooms * 2}
+                            >
+                              <Plus className="w-2 h-2" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {checkInDate && checkOutDate && (
-                  <div className="mt-4 flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                  <div className="mt-4 flex items-center flex-wrap gap-3 p-3 bg-primary/10 rounded-lg">
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="font-medium">{format(checkInDate, "EEE, MMM d")}</span>
@@ -583,9 +830,19 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="font-medium">{format(checkOutDate, "EEE, MMM d")}</span>
                     </div>
-                    <span className="ml-auto text-sm font-semibold text-primary">
+                    <span className="text-sm font-semibold text-primary">
                       {calculateNights()} {calculateNights() === 1 ? 'night' : 'nights'}
                     </span>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground border-l border-border pl-3 ml-auto">
+                      <span className="flex items-center gap-1">
+                        <DoorOpen className="w-3 h-3" />
+                        {rooms} {rooms === 1 ? 'room' : 'rooms'}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {totalGuests} {totalGuests === 1 ? 'guest' : 'guests'}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -641,6 +898,34 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                     className="mt-1"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Currency Selector */}
+            <div className="mb-6 flex items-center justify-end gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>View prices in:</span>
+                <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map(currency => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={fetchExchangeRates}
+                  disabled={loadingRates}
+                >
+                  <RefreshCw className={`w-3 h-3 ${loadingRates ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
             </div>
 
@@ -826,9 +1111,14 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                         )}
                         
                         <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <span className="text-2xl font-bold text-primary">
-                            ${option.price}
-                          </span>
+                          <div>
+                            <span className="text-2xl font-bold text-primary">
+                              {getCurrencySymbol()}{convertPrice(option.price)}
+                            </span>
+                            {selectedCurrency !== 'USD' && (
+                              <span className="text-xs text-muted-foreground ml-2">(${option.price} USD)</span>
+                            )}
+                          </div>
                           <div className={`text-xs font-semibold px-3 py-1 rounded-full ${
                             selectedOption === i
                               ? "bg-primary text-primary-foreground"
