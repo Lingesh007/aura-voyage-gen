@@ -46,8 +46,18 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
+  const [visaSearchResults, setVisaSearchResults] = useState<any[]>([]);
+  const [activitySearchResults, setActivitySearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Visa search inputs
+  const [visaDestination, setVisaDestination] = useState("");
+  const [visaType, setVisaType] = useState("business");
+  
+  // Activity search inputs
+  const [activityDestination, setActivityDestination] = useState("");
+  const [activityDate, setActivityDate] = useState<Date | undefined>(undefined);
 
   // Hotel search inputs
   const [hotelDestination, setHotelDestination] = useState("");
@@ -115,7 +125,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     return 0;
   };
 
-  // Search for flights
+  // Search for flights with AI enhancement
   const handleFlightSearch = async () => {
     if (!departureCity || !destinationCity || !departureDate) {
       toast({
@@ -130,58 +140,79 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     setHasSearched(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('flight-search', {
+      // Use AI-powered search for unique recommendations
+      const { data, error } = await supabase.functions.invoke('ai-travel-search', {
         body: {
-          origin: departureCity.toUpperCase().slice(0, 3),
-          destination: destinationCity.toUpperCase().slice(0, 3),
+          searchType: 'flights',
+          query: `Flights from ${departureCity} to ${destinationCity}`,
+          departure: departureCity,
+          destination: destinationCity,
           departureDate: format(departureDate, 'yyyy-MM-dd'),
-          adults: passengers.adults
+          returnDate: returnDate ? format(returnDate, 'yyyy-MM-dd') : undefined,
+          adults: passengers.adults,
+          children: passengers.children
         }
       });
 
       if (error) {
-        console.error('Flight search error:', error);
+        console.error('AI flight search error:', error);
         toast({
           title: "Search Error",
           description: "Unable to search flights. Please try again.",
           variant: "destructive",
         });
         setSearchResults([]);
-      } else if (data?.data) {
-        const formattedResults = data.data.slice(0, 5).map((offer: any, index: number) => ({
+      } else if (data?.data && data.data.length > 0) {
+        const formattedResults = data.data.map((flight: any, index: number) => ({
           image: [flightAirplane, flightBusiness, flightLounge][index % 3],
-          destination: destinationCity,
-          departure: departureCity,
-          arrival: destinationCity,
-          departureTime: offer.itineraries?.[0]?.segments?.[0]?.departure?.at?.split('T')[1]?.slice(0, 5) || "N/A",
-          arrivalTime: offer.itineraries?.[0]?.segments?.slice(-1)[0]?.arrival?.at?.split('T')[1]?.slice(0, 5) || "N/A",
+          destination: flight.destination || destinationCity,
+          departure: flight.departure || departureCity,
+          arrival: flight.arrival || destinationCity,
+          departureTime: flight.departureTime || "N/A",
+          arrivalTime: flight.arrivalTime || "N/A",
           date: format(departureDate, "MMM d, yyyy"),
-          duration: offer.itineraries?.[0]?.duration?.replace('PT', '').toLowerCase() || "N/A",
-          price: parseFloat(offer.price?.total || 0),
-          class: offer.travelerPricings?.[0]?.fareDetailsBySegment?.[0]?.cabin || "Economy",
-          flightCode: offer.itineraries?.[0]?.segments?.[0]?.carrierCode + offer.itineraries?.[0]?.segments?.[0]?.number || "N/A",
-          layover: offer.itineraries?.[0]?.segments?.length > 1 ? `${offer.itineraries[0].segments.length - 1} stop(s)` : "Direct",
-          airline: offer.itineraries?.[0]?.segments?.[0]?.carrierCode || "N/A",
-          pointsEarned: Math.round(parseFloat(offer.price?.total || 0) * 2)
+          duration: flight.duration || "N/A",
+          price: flight.price || 0,
+          class: flight.class || "Economy",
+          flightCode: flight.flightCode || "N/A",
+          layover: flight.layover || "Direct",
+          airline: flight.airline || "N/A",
+          pointsEarned: flight.pointsEarned || Math.round((flight.price || 0) * 2),
+          name: flight.name,
+          highlights: flight.highlights,
+          deal: flight.deal
         }));
         setSearchResults(formattedResults);
+        toast({
+          title: "Flights Found",
+          description: data.summary || `Found ${formattedResults.length} flight options.`,
+        });
       } else {
         setSearchResults([]);
+        toast({
+          title: "No Results",
+          description: "No flights found for the selected route.",
+        });
       }
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
+      toast({
+        title: "Search Error",
+        description: "An error occurred while searching.",
+        variant: "destructive",
+      });
     } finally {
       setSearchLoading(false);
     }
   };
 
-  // Search for hotels using Amadeus API
+  // Search for hotels with AI enhancement
   const handleHotelSearch = async () => {
     if (!hotelDestination || !checkInDate || !checkOutDate) {
       toast({
         title: "Missing Information",
-        description: "Please enter destination city code (e.g., PAR, LON, NYC), check-in and check-out dates.",
+        description: "Please enter destination city, check-in and check-out dates.",
         variant: "destructive",
       });
       return;
@@ -191,18 +222,24 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     setHasSearched(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('hotel-search', {
+      const nights = differenceInDays(checkOutDate, checkInDate);
+      
+      // Use AI-powered search for unique recommendations
+      const { data, error } = await supabase.functions.invoke('ai-travel-search', {
         body: {
-          cityCode: hotelDestination.toUpperCase().slice(0, 3),
+          searchType: 'hotels',
+          query: `Hotels in ${hotelDestination}`,
+          destination: hotelDestination,
           checkInDate: format(checkInDate, 'yyyy-MM-dd'),
           checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
           adults: guests.adults,
+          children: guests.children,
           rooms: rooms
         }
       });
 
       if (error) {
-        console.error('Hotel search error:', error);
+        console.error('AI hotel search error:', error);
         toast({
           title: "Search Error",
           description: "Unable to search hotels. Please try again.",
@@ -210,34 +247,35 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
         });
         setHotelSearchResults([]);
       } else if (data?.data && data.data.length > 0) {
-        const nights = differenceInDays(checkOutDate, checkInDate);
-        const formattedResults = data.data.slice(0, 6).map((hotel: any, index: number) => ({
+        const formattedResults = data.data.map((hotel: any, index: number) => ({
           image: [hotelParis, hotelDubai, hotelTokyo][index % 3],
-          destination: hotelDestination.toUpperCase(),
+          destination: hotel.destination || hotelDestination,
           name: hotel.name || 'Hotel',
-          rating: Math.floor(Math.random() * 2) + 4, // 4-5 stars for display
-          location: hotel.cityCode || hotelDestination,
+          rating: hotel.rating || 4,
+          location: hotel.location || hotelDestination,
           date: `${nights} night${nights > 1 ? 's' : ''}`,
           nights: nights,
           checkIn: format(checkInDate, "MMM d, yyyy"),
           checkOut: format(checkOutDate, "MMM d, yyyy"),
-          price: hotel.price?.total ? parseFloat(hotel.price.total) : 0,
-          pricePerNight: hotel.price?.total ? parseFloat(hotel.price.total) / nights : 0,
-          amenities: hotel.room?.description || "Standard amenities",
-          totalCost: hotel.price?.total ? parseFloat(hotel.price.total) : 0,
-          roomType: hotel.room?.typeEstimated?.category || hotel.room?.type || "Standard Room",
-          available: hotel.available !== false
+          price: hotel.price || 0,
+          pricePerNight: hotel.pricePerNight || (hotel.price ? hotel.price / nights : 0),
+          amenities: hotel.amenities || "WiFi, Business Center",
+          totalCost: hotel.price || 0,
+          roomType: hotel.roomType || "Standard Room",
+          available: true,
+          highlights: hotel.highlights,
+          deal: hotel.deal
         }));
         setHotelSearchResults(formattedResults);
         toast({
           title: "Hotels Found",
-          description: `Found ${formattedResults.length} available hotels.`,
+          description: data.summary || `Found ${formattedResults.length} hotel options.`,
         });
       } else {
         setHotelSearchResults([]);
         toast({
           title: "No Results",
-          description: data?.message || "No hotels found for the selected dates and location.",
+          description: "No hotels found for the selected destination.",
         });
       }
     } catch (error) {
@@ -245,9 +283,137 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
       setHotelSearchResults([]);
       toast({
         title: "Search Error",
-        description: "An error occurred while searching. Please try again.",
+        description: "An error occurred while searching.",
         variant: "destructive",
       });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Search for visas with AI
+  const handleVisaSearch = async () => {
+    if (!visaDestination) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter destination country for visa search.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSearchLoading(true);
+    setHasSearched(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-travel-search', {
+        body: {
+          searchType: 'visas',
+          query: `${visaType} visa for ${visaDestination}`,
+          destination: visaDestination,
+          preferences: [visaType]
+        }
+      });
+
+      if (error) {
+        console.error('AI visa search error:', error);
+        toast({
+          title: "Search Error",
+          description: "Unable to search visas. Please try again.",
+          variant: "destructive",
+        });
+        setVisaSearchResults([]);
+      } else if (data?.data && data.data.length > 0) {
+        const formattedResults = data.data.map((visa: any, index: number) => ({
+          image: [flightAirplane, flightBusiness, flightLounge][index % 3],
+          destination: visa.destination || visaDestination,
+          name: visa.name || `${visaType} Visa`,
+          processingTime: visa.processingTime || "5-7 days",
+          validity: visa.validity || "90 days",
+          price: visa.price || 0,
+          type: visa.visaType || "Single Entry",
+          highlights: visa.highlights,
+          deal: visa.deal
+        }));
+        setVisaSearchResults(formattedResults);
+        toast({
+          title: "Visa Options Found",
+          description: data.summary || `Found ${formattedResults.length} visa options.`,
+        });
+      } else {
+        setVisaSearchResults([]);
+        toast({
+          title: "No Results",
+          description: "No visa options found.",
+        });
+      }
+    } catch (error) {
+      console.error('Visa search error:', error);
+      setVisaSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Search for activities with AI
+  const handleActivitySearch = async () => {
+    if (!activityDestination) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter destination for activity search.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSearchLoading(true);
+    setHasSearched(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-travel-search', {
+        body: {
+          searchType: 'activities',
+          query: `Business activities and experiences in ${activityDestination}`,
+          destination: activityDestination,
+          departureDate: activityDate ? format(activityDate, 'yyyy-MM-dd') : undefined
+        }
+      });
+
+      if (error) {
+        console.error('AI activity search error:', error);
+        toast({
+          title: "Search Error",
+          description: "Unable to search activities. Please try again.",
+          variant: "destructive",
+        });
+        setActivitySearchResults([]);
+      } else if (data?.data && data.data.length > 0) {
+        const formattedResults = data.data.map((activity: any, index: number) => ({
+          image: [hotelParis, hotelDubai, hotelTokyo][index % 3],
+          destination: activity.destination || activityDestination,
+          name: activity.name || 'Experience',
+          duration: activity.duration || "Half Day",
+          participants: activity.participants || "Up to 10",
+          price: activity.price || 0,
+          includes: activity.includes || "Guide, Transport",
+          highlights: activity.highlights,
+          deal: activity.deal
+        }));
+        setActivitySearchResults(formattedResults);
+        toast({
+          title: "Activities Found",
+          description: data.summary || `Found ${formattedResults.length} activities.`,
+        });
+      } else {
+        setActivitySearchResults([]);
+        toast({
+          title: "No Results",
+          description: "No activities found.",
+        });
+      }
+    } catch (error) {
+      console.error('Activity search error:', error);
+      setActivitySearchResults([]);
     } finally {
       setSearchLoading(false);
     }
@@ -468,8 +634,12 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     if (fromAgent) return parseAIOptions();
     if (type === "flights" && searchResults.length > 0) return searchResults;
     if (type === "hotels" && hotelSearchResults.length > 0) return hotelSearchResults;
+    if (type === "visas" && visaSearchResults.length > 0) return visaSearchResults;
+    if (type === "activities" && activitySearchResults.length > 0) return activitySearchResults;
     if (hasSearched && type === "flights" && searchResults.length === 0) return [];
     if (hasSearched && type === "hotels" && hotelSearchResults.length === 0) return [];
+    if (hasSearched && type === "visas" && visaSearchResults.length === 0) return [];
+    if (hasSearched && type === "activities" && activitySearchResults.length === 0) return [];
     return getStaticOptions();
   };
   
@@ -1071,7 +1241,122 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
               </div>
             )}
 
-            {/* Traveler Details Form */}
+            {/* Visa Search Section */}
+            {type === "visas" && (
+              <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-5 h-5 text-accent" />
+                  <h3 className="font-semibold text-lg">Visa Search</h3>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label>Destination Country *</Label>
+                    <div className="relative mt-1">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="e.g., United Kingdom, Japan, UAE"
+                        value={visaDestination}
+                        onChange={(e) => setVisaDestination(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Visa Type</Label>
+                    <Select value={visaType} onValueChange={setVisaType}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select visa type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="business">Business Visa</SelectItem>
+                        <SelectItem value="tourist">Tourist Visa</SelectItem>
+                        <SelectItem value="work">Work Visa</SelectItem>
+                        <SelectItem value="transit">Transit Visa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleVisaSearch}
+                  disabled={!visaDestination || searchLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {searchLoading ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  Search Visa Options
+                </Button>
+              </div>
+            )}
+
+            {/* Activities Search Section */}
+            {type === "activities" && (
+              <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-5 h-5 text-pastel-coral" />
+                  <h3 className="font-semibold text-lg">Activity Search</h3>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label>Destination City *</Label>
+                    <div className="relative mt-1">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="e.g., Paris, Dubai, Tokyo"
+                        value={activityDestination}
+                        onChange={(e) => setActivityDestination(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Activity Date (Optional)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal mt-1",
+                            !activityDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {activityDate ? format(activityDate, "PPP") : "Select date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={activityDate}
+                          onSelect={setActivityDate}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleActivitySearch}
+                  disabled={!activityDestination || searchLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {searchLoading ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <MapPin className="w-4 h-4 mr-2" />
+                  )}
+                  Search Activities
+                </Button>
+              </div>
+            )}
+
             <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
               <div className="flex items-center gap-2 mb-4">
                 <User className="w-5 h-5 text-primary" />
