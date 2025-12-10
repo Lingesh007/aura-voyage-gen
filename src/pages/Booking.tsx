@@ -45,6 +45,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -175,18 +176,81 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     }
   };
 
-  // Search for hotels (mock for now)
-  const handleHotelSearch = () => {
+  // Search for hotels using Amadeus API
+  const handleHotelSearch = async () => {
     if (!hotelDestination || !checkInDate || !checkOutDate) {
       toast({
         title: "Missing Information",
-        description: "Please enter destination, check-in and check-out dates.",
+        description: "Please enter destination city code (e.g., PAR, LON, NYC), check-in and check-out dates.",
         variant: "destructive",
       });
       return;
     }
+
+    setSearchLoading(true);
     setHasSearched(true);
-    // Hotels use static options for now, but we mark that search was done
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('hotel-search', {
+        body: {
+          cityCode: hotelDestination.toUpperCase().slice(0, 3),
+          checkInDate: format(checkInDate, 'yyyy-MM-dd'),
+          checkOutDate: format(checkOutDate, 'yyyy-MM-dd'),
+          adults: guests.adults,
+          rooms: rooms
+        }
+      });
+
+      if (error) {
+        console.error('Hotel search error:', error);
+        toast({
+          title: "Search Error",
+          description: "Unable to search hotels. Please try again.",
+          variant: "destructive",
+        });
+        setHotelSearchResults([]);
+      } else if (data?.data && data.data.length > 0) {
+        const nights = differenceInDays(checkOutDate, checkInDate);
+        const formattedResults = data.data.slice(0, 6).map((hotel: any, index: number) => ({
+          image: [hotelParis, hotelDubai, hotelTokyo][index % 3],
+          destination: hotelDestination.toUpperCase(),
+          name: hotel.name || 'Hotel',
+          rating: Math.floor(Math.random() * 2) + 4, // 4-5 stars for display
+          location: hotel.cityCode || hotelDestination,
+          date: `${nights} night${nights > 1 ? 's' : ''}`,
+          nights: nights,
+          checkIn: format(checkInDate, "MMM d, yyyy"),
+          checkOut: format(checkOutDate, "MMM d, yyyy"),
+          price: hotel.price?.total ? parseFloat(hotel.price.total) : 0,
+          pricePerNight: hotel.price?.total ? parseFloat(hotel.price.total) / nights : 0,
+          amenities: hotel.room?.description || "Standard amenities",
+          totalCost: hotel.price?.total ? parseFloat(hotel.price.total) : 0,
+          roomType: hotel.room?.typeEstimated?.category || hotel.room?.type || "Standard Room",
+          available: hotel.available !== false
+        }));
+        setHotelSearchResults(formattedResults);
+        toast({
+          title: "Hotels Found",
+          description: `Found ${formattedResults.length} available hotels.`,
+        });
+      } else {
+        setHotelSearchResults([]);
+        toast({
+          title: "No Results",
+          description: data?.message || "No hotels found for the selected dates and location.",
+        });
+      }
+    } catch (error) {
+      console.error('Hotel search error:', error);
+      setHotelSearchResults([]);
+      toast({
+        title: "Search Error",
+        description: "An error occurred while searching. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   // Parse AI response details if coming from agent
@@ -403,7 +467,9 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const getDisplayOptions = () => {
     if (fromAgent) return parseAIOptions();
     if (type === "flights" && searchResults.length > 0) return searchResults;
+    if (type === "hotels" && hotelSearchResults.length > 0) return hotelSearchResults;
     if (hasSearched && type === "flights" && searchResults.length === 0) return [];
+    if (hasSearched && type === "hotels" && hotelSearchResults.length === 0) return [];
     return getStaticOptions();
   };
   
