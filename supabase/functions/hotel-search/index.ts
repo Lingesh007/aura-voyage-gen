@@ -89,9 +89,10 @@ Deno.serve(async (req) => {
     if (!hotelListResponse.ok) {
       const errorText = await hotelListResponse.text();
       console.error('Hotel list failed:', errorText);
+      // Return empty results instead of error for "not found" cases
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch hotels in this city', details: errorText }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ data: [], message: 'No hotels found for this city code. Please use a valid IATA city code (e.g., PAR, LON, NYC, DXB).' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
