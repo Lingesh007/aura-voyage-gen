@@ -50,6 +50,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
   const [activitySearchResults, setActivitySearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchSummary, setSearchSummary] = useState<string>("");
 
   // Visa search inputs
   const [visaDestination, setVisaDestination] = useState("");
@@ -183,15 +184,14 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           deal: flight.deal
         }));
         setSearchResults(formattedResults);
-        toast({
-          title: "Flights Found",
-          description: data.summary || `Found ${formattedResults.length} flight options.`,
-        });
+        setSearchSummary(data.summary || `Found ${formattedResults.length} flight options for your trip.`);
       } else {
         setSearchResults([]);
+        setSearchSummary("");
         toast({
           title: "No Results",
-          description: "No flights found for the selected route.",
+          description: "No flights found for the selected route. Try different dates or cities.",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -267,15 +267,14 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           deal: hotel.deal
         }));
         setHotelSearchResults(formattedResults);
-        toast({
-          title: "Hotels Found",
-          description: data.summary || `Found ${formattedResults.length} hotel options.`,
-        });
+        setSearchSummary(data.summary || `Found ${formattedResults.length} hotel options for your stay.`);
       } else {
         setHotelSearchResults([]);
+        setSearchSummary("");
         toast({
           title: "No Results",
-          description: "No hotels found for the selected destination.",
+          description: "No hotels found for the selected destination. Try a different city.",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -336,15 +335,14 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           deal: visa.deal
         }));
         setVisaSearchResults(formattedResults);
-        toast({
-          title: "Visa Options Found",
-          description: data.summary || `Found ${formattedResults.length} visa options.`,
-        });
+        setSearchSummary(data.summary || `Found ${formattedResults.length} visa options.`);
       } else {
         setVisaSearchResults([]);
+        setSearchSummary("");
         toast({
           title: "No Results",
-          description: "No visa options found.",
+          description: "No visa options found for this destination.",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -400,15 +398,14 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
           deal: activity.deal
         }));
         setActivitySearchResults(formattedResults);
-        toast({
-          title: "Activities Found",
-          description: data.summary || `Found ${formattedResults.length} activities.`,
-        });
+        setSearchSummary(data.summary || `Found ${formattedResults.length} activities.`);
       } else {
         setActivitySearchResults([]);
+        setSearchSummary("");
         toast({
           title: "No Results",
-          description: "No activities found.",
+          description: "No activities found for this destination.",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -1357,7 +1354,9 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
               </div>
             )}
 
-            <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border">
+            {/* Traveler Details - Only show after selection */}
+            {selectedOption !== null && (
+            <div className="mb-8 bg-muted/30 p-6 rounded-xl border border-border animate-fade-in">
               <div className="flex items-center gap-2 mb-4">
                 <User className="w-5 h-5 text-primary" />
                 <h3 className="font-semibold text-lg">Traveler Details</h3>
@@ -1408,6 +1407,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Currency Selector */}
             <div className="mb-6 flex items-center justify-end gap-3">
@@ -1439,9 +1439,17 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
 
             {/* Booking Options */}
             <div className="space-y-6 mb-8">
-              <h3 className="font-semibold text-lg">
-                {fromAgent ? "AI Recommended Options" : searchResults.length > 0 ? "Search Results" : "Available Options"}
-              </h3>
+              <div className="flex flex-col gap-2">
+                <h3 className="font-semibold text-lg">
+                  {fromAgent ? "AI Recommended Options" : options.length > 0 ? "Search Results" : "Available Options"}
+                </h3>
+                {searchSummary && options.length > 0 && (
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-foreground">{searchSummary}</p>
+                    <p className="text-xs text-muted-foreground mt-2">Select an option below to proceed with booking.</p>
+                  </div>
+                )}
+              </div>
               {searchLoading ? (
                 <div className="text-center py-12">
                   <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary mb-4" />
@@ -1458,7 +1466,7 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                   ) : (
                     <>
                       <p className="font-medium mb-2">Enter your search criteria above</p>
-                      <p className="text-sm">Fill in the details and click "Search {type === 'flights' ? 'Flights' : 'Hotels'}" to find available options.</p>
+                      <p className="text-sm">Fill in the details and click "Search" to find available options.</p>
                     </>
                   )}
                 </div>
