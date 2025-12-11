@@ -8,19 +8,19 @@ extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [functions.travax-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.flight-search]
-verify_jwt = false
+verify_jwt = true
 
 [functions.forex-rates]
 verify_jwt = false
 
 [functions.hotel-search]
-verify_jwt = false
+verify_jwt = true
 
 [functions.travel-notifications]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-travel-search]
-verify_jwt = false
+verify_jwt = true
