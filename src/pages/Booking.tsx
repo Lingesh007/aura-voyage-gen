@@ -626,18 +626,22 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
     }
   };
 
-  // Determine which options to show
+  // Determine which options to show - ONLY show after user searches
   const getDisplayOptions = () => {
-    if (fromAgent) return parseAIOptions();
+    // Show AI agent options only if user came from agent AND has booking data
+    if (fromAgent) {
+      const agentOptions = parseAIOptions();
+      if (agentOptions.length > 0) return agentOptions;
+      // If no agent data, don't show anything until user searches
+      return [];
+    }
+    // Only show search results - no static fallback
     if (type === "flights" && searchResults.length > 0) return searchResults;
     if (type === "hotels" && hotelSearchResults.length > 0) return hotelSearchResults;
     if (type === "visas" && visaSearchResults.length > 0) return visaSearchResults;
     if (type === "activities" && activitySearchResults.length > 0) return activitySearchResults;
-    if (hasSearched && type === "flights" && searchResults.length === 0) return [];
-    if (hasSearched && type === "hotels" && hotelSearchResults.length === 0) return [];
-    if (hasSearched && type === "visas" && visaSearchResults.length === 0) return [];
-    if (hasSearched && type === "activities" && activitySearchResults.length === 0) return [];
-    return getStaticOptions();
+    // Return empty array - user must search to see options
+    return [];
   };
   
   const options = getDisplayOptions();
