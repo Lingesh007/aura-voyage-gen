@@ -1518,9 +1518,9 @@ const Booking = ({ onOpenAgent }: BookingProps) => {
                               </>
                             )}
                           </div>
-                          {!fromAgent && type === "hotels" && option.rating && (
+                          {!fromAgent && type === "hotels" && option.rating && Number.isFinite(option.rating) && option.rating > 0 && (
                             <div className="flex items-center gap-1 text-accent">
-                              {[...Array(option.rating)].map((_, i) => (
+                              {[...Array(Math.min(Math.floor(option.rating), 5))].map((_, i) => (
                                 <Star key={i} className="w-3 h-3 fill-current" />
                               ))}
                             </div>
