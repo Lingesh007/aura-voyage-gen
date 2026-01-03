@@ -3,6 +3,22 @@ import { Input } from "@/components/ui/input";
 import { Search, Loader2, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+// Send search data to n8n webhook (fire and forget)
+const sendToWebhook = async (query: string, category: string) => {
+  try {
+    await supabase.functions.invoke("search-webhook", {
+      body: {
+        query,
+        category,
+        source: "tile",
+        userAgent: navigator.userAgent,
+      },
+    });
+  } catch (error) {
+    console.error("[TileSearch] Webhook error:", error);
+  }
+};
 import {
   Dialog,
   DialogContent,
@@ -88,6 +104,9 @@ export const TileSearch = ({ category, placeholder }: TileSearchProps) => {
   const handleSearchSubmit = async (searchQuery?: string) => {
     const searchText = searchQuery || query;
     if (searchText.trim().length < 2 || loading) return;
+
+    // Send to webhook (fire and forget)
+    sendToWebhook(searchText, category);
 
     setLoading(true);
     setShowResults(true);

@@ -1,5 +1,22 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Send search data to n8n webhook (fire and forget)
+const sendToWebhook = async (query: string, category: string, source: string) => {
+  try {
+    await supabase.functions.invoke("search-webhook", {
+      body: {
+        query,
+        category,
+        source,
+        userAgent: navigator.userAgent,
+      },
+    });
+  } catch (error) {
+    // Silently fail - webhook should not block search
+    console.error("[SearchService] Webhook error:", error);
+  }
+};
+
 export interface SearchResult {
   title: string;
   description: string;
@@ -229,6 +246,9 @@ export class SearchService {
 
   static async search(query: string): Promise<SearchResult[]> {
     if (!query || query.trim().length < 2) return [];
+    
+    // Send to webhook (fire and forget - don't await)
+    sendToWebhook(query, "general", "dashboard");
     
     await this.saveSearchHistory(query);
     
