@@ -24,3 +24,6 @@ verify_jwt = true
 
 [functions.ai-travel-search]
 verify_jwt = true
+
+[functions.search-webhook]
+verify_jwt = false
