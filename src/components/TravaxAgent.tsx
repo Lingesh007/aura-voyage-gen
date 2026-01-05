@@ -57,11 +57,17 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
     setLoading(true);
 
     try {
+      // Get auth session to pass to the edge function for personalization
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke("travax-chat", {
         body: {
           messages: [...messages, userMessage],
           userName,
         },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`,
+        } : undefined,
       });
 
       if (error) throw error;
