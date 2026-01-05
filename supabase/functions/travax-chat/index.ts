@@ -1,11 +1,69 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Analyze search patterns to understand user preferences
+const analyzeSearchPatterns = (searchHistory: any[]): string => {
+  if (!searchHistory || searchHistory.length === 0) {
+    return "No previous search history available.";
+  }
+
+  const patterns: string[] = [];
+  const destinations = new Set<string>();
+  const categories = new Map<string, number>();
+  let totalSearches = 0;
+
+  searchHistory.forEach((item) => {
+    totalSearches += item.search_count || 1;
+    
+    // Track categories
+    if (item.category) {
+      categories.set(item.category, (categories.get(item.category) || 0) + (item.search_count || 1));
+    }
+
+    // Extract destinations from queries
+    const destMatch = item.query.match(/(?:to|in|visit|explore)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi);
+    if (destMatch) {
+      destMatch.forEach((match: string) => {
+        const dest = match.replace(/(?:to|in|visit|explore)\s+/i, '').trim();
+        destinations.add(dest);
+      });
+    }
+
+    // Detect frequent queries
+    if (item.search_count >= 3) {
+      patterns.push(`Frequently searches: "${item.query}" (${item.search_count} times)`);
+    }
+  });
+
+  // Build preference summary
+  const summary: string[] = [];
+  
+  if (destinations.size > 0) {
+    summary.push(`Interested destinations: ${Array.from(destinations).slice(0, 5).join(', ')}`);
+  }
+
+  if (categories.size > 0) {
+    const sortedCategories = Array.from(categories.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    summary.push(`Preferred categories: ${sortedCategories.map(([cat, count]) => `${cat} (${count})`).join(', ')}`);
+  }
+
+  if (patterns.length > 0) {
+    summary.push(`Search patterns: ${patterns.slice(0, 3).join('; ')}`);
+  }
+
+  summary.push(`Total search interactions: ${totalSearches}`);
+
+  return summary.join('\n');
 };
 
 serve(async (req) => {
@@ -20,7 +78,30 @@ serve(async (req) => {
       throw new Error('Lovable AI key not configured');
     }
 
-    console.log('Calling Lovable AI with messages:', messages);
+    // Fetch user's search history for personalization
+    let searchPatternContext = "";
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: searchHistory } = await supabase
+          .from('search_history')
+          .select('query, category, search_count, is_saved')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(20);
+        
+        searchPatternContext = analyzeSearchPatterns(searchHistory || []);
+      }
+    }
+
+    console.log('Calling Lovable AI with personalized context');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -35,6 +116,9 @@ serve(async (req) => {
             role: 'system',
             content: `You are Travax AI, a luxury business travel assistant specializing in B2B and SME travel.${userName ? ` The user's name is ${userName}.` : ''}
 
+USER BEHAVIOR & PREFERENCES (use this to personalize recommendations):
+${searchPatternContext}
+
 Your capabilities:
 - Help plan business trips with detailed itineraries
 - Find and recommend flights, hotels, visas, and activities
@@ -42,6 +126,13 @@ Your capabilities:
 - Provide real-time travel advice and recommendations
 - Assist with visa documentation and requirements
 - Suggest networking opportunities and business centers
+
+PERSONALIZATION GUIDELINES:
+- Use the user's search history to anticipate their needs
+- Prioritize destinations and categories they frequently search for
+- If they repeatedly search for a destination, proactively offer deeper insights
+- Reference their past interests naturally ("Since you've been exploring Dubai...")
+- Suggest similar destinations based on their patterns
 
 CRITICAL RESPONSE GUIDELINES:
 - Be PRECISE and DIRECT - answer exactly what is asked

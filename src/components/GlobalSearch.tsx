@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Globe, MapPin, Plane, Clock, Bookmark } from "lucide-react";
-import { SearchService, SearchResult } from "@/services/SearchService";
+import { Search, Globe, MapPin, Plane, Clock, Bookmark, TrendingUp } from "lucide-react";
+import { SearchService, SearchResult, SearchHistoryItem } from "@/services/SearchService";
 import { useToast } from "@/hooks/use-toast";
 
 export const GlobalSearch = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [showRecent, setShowRecent] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -19,6 +21,7 @@ export const GlobalSearch = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setShowRecent(false);
       }
     };
 
@@ -26,17 +29,44 @@ export const GlobalSearch = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Load recent searches on mount
+  useEffect(() => {
+    const loadRecentSearches = async () => {
+      const history = await SearchService.getSearchHistory(6);
+      setRecentSearches(history);
+    };
+    loadRecentSearches();
+  }, []);
+
+  const handleFocus = () => {
+    if (query.trim().length < 2 && recentSearches.length > 0) {
+      setShowRecent(true);
+      setIsOpen(false);
+    } else if (results.length > 0) {
+      setIsOpen(true);
+      setShowRecent(false);
+    }
+  };
+
   const handleSearch = async (value: string) => {
     setQuery(value);
     if (value.trim().length < 2) {
       setResults([]);
       setIsOpen(false);
+      setShowRecent(recentSearches.length > 0);
       return;
     }
 
+    setShowRecent(false);
     const searchResults = await SearchService.search(value);
     setResults(searchResults);
     setIsOpen(searchResults.length > 0);
+  };
+
+  const handleRecentClick = (historyItem: SearchHistoryItem) => {
+    setQuery(historyItem.query);
+    setShowRecent(false);
+    handleSearch(historyItem.query);
   };
 
   const handleResultClick = (result: SearchResult) => {
@@ -86,11 +116,41 @@ export const GlobalSearch = () => {
           placeholder="Search flights, hotels, destinations..."
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => results.length > 0 && setIsOpen(true)}
+          onFocus={handleFocus}
           className="pl-10 bg-background/50 backdrop-blur-sm border-border/50"
         />
       </div>
 
+      {/* Recent Searches Dropdown */}
+      {showRecent && recentSearches.length > 0 && (
+        <Card className="absolute top-full mt-2 w-full max-h-80 overflow-y-auto z-50 shadow-xl border-border/50">
+          <div className="p-2">
+            <div className="flex items-center gap-2 px-2 pb-2 mb-1 border-b border-border/30">
+              <TrendingUp className="w-3 h-3 text-primary" />
+              <span className="text-xs font-medium text-muted-foreground">Recent Searches</span>
+            </div>
+            {recentSearches.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => handleRecentClick(item)}
+                className="p-2 rounded-lg hover:bg-accent/50 cursor-pointer transition-colors flex items-center gap-2"
+              >
+                <Clock className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm truncate">{item.query}</div>
+                </div>
+                {item.search_count >= 3 && (
+                  <Badge variant="secondary" className="text-xs px-1.5">
+                    ×{item.search_count}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Search Results Dropdown */}
       {isOpen && results.length > 0 && (
         <Card className="absolute top-full mt-2 w-full max-h-96 overflow-y-auto z-50 shadow-xl border-border/50">
           <div className="p-2">
