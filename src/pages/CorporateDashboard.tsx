@@ -18,7 +18,6 @@ import { BookingHistory } from "@/components/BookingHistory";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import HeroSection from "@/components/dashboard/HeroSection";
 import QuickActions from "@/components/dashboard/QuickActions";
-import AISearchBar from "@/components/dashboard/AISearchBar";
 import CorporateMetrics from "@/components/dashboard/CorporateMetrics";
 
 interface CorporateDashboardProps {
@@ -100,14 +99,6 @@ const CorporateDashboard = ({ onOpenAgent, user }: CorporateDashboardProps) => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          
-          {/* AI Search Bar */}
-          <div className="animate-fade-in -mt-16 relative z-20">
-            <AISearchBar 
-              onOpenAgent={onOpenAgent} 
-              placeholder="Ask Travax AI... 'Book team retreat for 10 people in Bali under $25,000'"
-            />
-          </div>
 
           {/* Quick Actions */}
           <section className="animate-fade-in">
