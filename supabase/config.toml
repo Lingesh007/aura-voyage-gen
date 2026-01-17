@@ -27,3 +27,6 @@ verify_jwt = true
 
 [functions.search-webhook]
 verify_jwt = false
+
+[functions.murf-tts]
+verify_jwt = true

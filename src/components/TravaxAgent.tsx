@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { X, Send, Sparkles, Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -20,8 +19,53 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: "Voice Error",
+          description: "Could not recognize speech. Please try again.",
+          variant: "destructive",
+        });
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+      if (currentAudio) {
+        currentAudio.pause();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,6 +86,99 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Text-to-Speech using Murf AI
+  const speakText = useCallback(async (text: string) => {
+    if (!voiceEnabled) return;
+    
+    // Stop any currently playing audio
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+    }
+    
+    setIsSpeaking(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke("murf-tts", {
+        body: { 
+          text: text.substring(0, 1000), // Limit text length
+          voiceId: "en-US-natalie" 
+        },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`,
+        } : undefined,
+      });
+      
+      if (error) throw error;
+      
+      if (data.encodedAudio) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.encodedAudio}`);
+        setCurrentAudio(audio);
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          setCurrentAudio(null);
+        };
+        
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          setCurrentAudio(null);
+        };
+        
+        await audio.play();
+      } else if (data.audioFile) {
+        const audio = new Audio(data.audioFile);
+        setCurrentAudio(audio);
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          setCurrentAudio(null);
+        };
+        
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          setCurrentAudio(null);
+        };
+        
+        await audio.play();
+      }
+    } catch (error: any) {
+      console.error("TTS Error:", error);
+      setIsSpeaking(false);
+    }
+  }, [voiceEnabled, currentAudio]);
+
+  // Toggle voice input
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not Supported",
+        description: "Voice input is not supported in this browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  // Stop speaking
+  const stopSpeaking = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
+    }
+    setIsSpeaking(false);
+  };
 
   const handleSend = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
@@ -78,6 +215,11 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      // Speak the response if voice is enabled
+      if (voiceEnabled) {
+        speakText(data.message);
+      }
     } catch (error: any) {
       console.error("Error:", error);
       toast({
@@ -257,19 +399,34 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
             </div>
             <div>
               <h2 className="font-luxury text-2xl font-bold text-gradient-pastel">
-                Travax AI Agent
+                Travax AI Concierge
               </h2>
-              <p className="text-sm text-muted-foreground">Your intelligent travel assistant</p>
+              <p className="text-sm text-muted-foreground">Voice-enabled travel assistant</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="hover:bg-primary/10"
-          >
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Voice Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setVoiceEnabled(!voiceEnabled);
+                if (isSpeaking) stopSpeaking();
+              }}
+              className={`hover:bg-primary/10 ${voiceEnabled ? 'text-primary' : 'text-muted-foreground'}`}
+              title={voiceEnabled ? "Voice responses enabled" : "Voice responses disabled"}
+            >
+              {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="hover:bg-primary/10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -308,6 +465,15 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
                       >
                         Regenerate
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => speakText(message.content)}
+                        disabled={isSpeaking}
+                        className="text-xs"
+                      >
+                        {isSpeaking ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3 h-3" />}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -325,14 +491,41 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
 
         {/* Input */}
         <div className="p-6 border-t border-border/50 bg-gradient-to-r from-secondary/5 to-primary/5">
+          {/* Speaking indicator */}
+          {isSpeaking && (
+            <div className="flex items-center justify-center gap-2 mb-3 text-primary">
+              <div className="flex gap-1">
+                <span className="w-1 h-4 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-4 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                <span className="w-1 h-4 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span className="text-sm">Speaking...</span>
+              <Button size="sm" variant="ghost" onClick={stopSpeaking} className="text-xs h-6">
+                Stop
+              </Button>
+            </div>
+          )}
+          
           <div className="flex gap-3">
+            {/* Voice Input Button */}
+            <Button
+              variant={isListening ? "default" : "outline"}
+              size="icon"
+              onClick={toggleVoiceInput}
+              disabled={loading}
+              className={`shrink-0 ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : ''}`}
+              title={isListening ? "Stop listening" : "Start voice input"}
+            >
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+            
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && !loading && handleSend()}
-              placeholder="Ask me anything about your travel plans..."
+              placeholder={isListening ? "Listening..." : "Ask me anything about your travel plans..."}
               className="flex-1 bg-card/80 backdrop-blur-sm border-border/50 focus:border-primary shadow-inner"
-              disabled={loading}
+              disabled={loading || isListening}
             />
             <Button
               onClick={() => handleSend()}
@@ -343,7 +536,7 @@ const TravaxAgent = ({ onClose }: TravaxAgentProps) => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            AI-powered by Gemini • Personalized to your preferences
+            Voice-enabled AI • Powered by Murf AI & Gemini
           </p>
         </div>
       </div>
