@@ -30,3 +30,6 @@ verify_jwt = false
 
 [functions.murf-tts]
 verify_jwt = true
+
+[functions.receipt-ocr]
+verify_jwt = true

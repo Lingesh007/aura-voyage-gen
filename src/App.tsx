@@ -41,6 +41,9 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/budget-tracker" element={<BudgetTracker />} />
             <Route path="/approvals" element={<Approvals />} />
+            <Route path="/policy-engine" element={<PolicyEngine />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/vendor-analytics" element={<VendorAnalytics />} />
             <Route path="/trips" element={<Trips />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
