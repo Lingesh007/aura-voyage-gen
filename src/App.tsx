@@ -13,6 +13,9 @@ import Confirmation from "./pages/Confirmation";
 import Profile from "./pages/Profile";
 import BudgetTracker from "./pages/BudgetTracker";
 import Approvals from "./pages/Approvals";
+import PolicyEngine from "./pages/PolicyEngine";
+import Expenses from "./pages/Expenses";
+import VendorAnalytics from "./pages/VendorAnalytics";
 import NotFound from "./pages/NotFound";
 import TravaxAgent from "./components/TravaxAgent";
 import { Button } from "@/components/ui/button";
@@ -38,6 +41,9 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/budget-tracker" element={<BudgetTracker />} />
             <Route path="/approvals" element={<Approvals />} />
+            <Route path="/policy-engine" element={<PolicyEngine />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/vendor-analytics" element={<VendorAnalytics />} />
             <Route path="/trips" element={<Trips />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
