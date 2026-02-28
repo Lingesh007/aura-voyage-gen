@@ -91,6 +91,140 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_reports: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["expense_status"]
+          submitted_at: string | null
+          title: string
+          total_amount: number
+          travel_request_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          submitted_at?: string | null
+          title: string
+          total_amount?: number
+          travel_request_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          submitted_at?: string | null
+          title?: string
+          total_amount?: number
+          travel_request_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_reports_travel_request_id_fkey"
+            columns: ["travel_request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string | null
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          currency: string
+          description: string | null
+          expense_date: string
+          id: string
+          merchant_name: string | null
+          ocr_data: Json | null
+          receipt_url: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["expense_status"]
+          travel_request_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          merchant_name?: string | null
+          ocr_data?: Json | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          travel_request_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          merchant_name?: string | null
+          ocr_data?: Json | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          travel_request_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_travel_request_id_fkey"
+            columns: ["travel_request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points: {
         Row: {
           created_at: string
@@ -162,6 +296,141 @@ export type Database = {
           },
         ]
       }
+      policy_audit_log: {
+        Row: {
+          action: string
+          changed_by: string
+          changes: Json | null
+          created_at: string
+          id: string
+          policy_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_by: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          policy_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          policy_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_audit_log_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "travel_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_rules: {
+        Row: {
+          conditions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          policy_id: string
+          rule_type: Database["public"]["Enums"]["rule_type"]
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          policy_id: string
+          rule_type: Database["public"]["Enums"]["rule_type"]
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          policy_id?: string
+          rule_type?: Database["public"]["Enums"]["rule_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_rules_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "travel_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preferred_vendors: {
+        Row: {
+          contract_end: string | null
+          contract_rate: number | null
+          contract_start: string | null
+          created_at: string
+          created_by: string
+          discount_percentage: number | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          policy_id: string | null
+          updated_at: string
+          vendor_name: string
+          vendor_type: string
+        }
+        Insert: {
+          contract_end?: string | null
+          contract_rate?: number | null
+          contract_start?: string | null
+          created_at?: string
+          created_by: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          policy_id?: string | null
+          updated_at?: string
+          vendor_name: string
+          vendor_type: string
+        }
+        Update: {
+          contract_end?: string | null
+          contract_rate?: number | null
+          contract_start?: string | null
+          created_at?: string
+          created_by?: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          policy_id?: string | null
+          updated_at?: string
+          vendor_name?: string
+          vendor_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferred_vendors_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "travel_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       search_history: {
         Row: {
           category: string | null
@@ -192,6 +461,39 @@ export type Database = {
           search_count?: number | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      travel_policies: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -270,6 +572,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_spend_summary: {
+        Row: {
+          avg_transaction: number
+          booking_count: number
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          total_spend: number
+          vendor_name: string
+          vendor_type: string
+        }
+        Insert: {
+          avg_transaction?: number
+          booking_count?: number
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          total_spend?: number
+          vendor_name: string
+          vendor_type: string
+        }
+        Update: {
+          avg_transaction?: number
+          booking_count?: number
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          total_spend?: number
+          vendor_name?: string
+          vendor_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -286,8 +624,30 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee"
+      expense_category:
+        | "flights"
+        | "hotels"
+        | "meals"
+        | "transport"
+        | "communication"
+        | "entertainment"
+        | "office_supplies"
+        | "other"
+      expense_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "reimbursed"
       loyalty_tier: "bronze" | "silver" | "gold" | "platinum"
       request_status: "pending" | "approved" | "rejected" | "cancelled"
+      rule_type:
+        | "spend_limit"
+        | "approval_required"
+        | "preferred_vendor"
+        | "advance_booking"
+        | "cabin_class"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -416,8 +776,33 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee"],
+      expense_category: [
+        "flights",
+        "hotels",
+        "meals",
+        "transport",
+        "communication",
+        "entertainment",
+        "office_supplies",
+        "other",
+      ],
+      expense_status: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "reimbursed",
+      ],
       loyalty_tier: ["bronze", "silver", "gold", "platinum"],
       request_status: ["pending", "approved", "rejected", "cancelled"],
+      rule_type: [
+        "spend_limit",
+        "approval_required",
+        "preferred_vendor",
+        "advance_booking",
+        "cabin_class",
+        "custom",
+      ],
     },
   },
 } as const
